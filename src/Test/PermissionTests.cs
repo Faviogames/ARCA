@@ -44,7 +44,7 @@ namespace WinMemoryCleaner.Test
         [Test]
         public void ElevatedReportRetainsCountersNotesAndDetails()
         {
-            var source = new CleanTaskResult(CleanCategory.Usb) { State = CleanTaskState.Completed, Bytes = 54321, Entries = 3, Files = 2, Skipped = 4, Failed = 1, Note = "Dispositivo omitido" };
+            var source = new CleanTaskResult(CleanCategory.Usb) { State = CleanTaskState.Completed, Bytes = 54321, Entries = 3, Files = 2, Skipped = 4, Failed = 1, Note = "Dispositivo omitido", ProgressMessage = "Retirando 2/3 · Micrófono" };
             source.Detail("USB de prueba");
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
@@ -59,6 +59,7 @@ namespace WinMemoryCleaner.Test
                 Assert.AreEqual(source.Skipped, restored.Skipped);
                 Assert.AreEqual(source.Failed, restored.Failed);
                 Assert.AreEqual(source.Note, restored.Note);
+                Assert.AreEqual(source.ProgressMessage, restored.ProgressMessage);
                 CollectionAssert.AreEqual(source.Details, restored.Details);
             }
         }
@@ -97,6 +98,76 @@ namespace WinMemoryCleaner.Test
             Assert.IsFalse(ElevatedOperations.TryRunWorker(new string[0]));
             Assert.IsFalse(ElevatedOperations.TryRunWorker(new[] { "--other" }));
             Assert.IsTrue(ElevatedOperations.TryRunWorker(new[] { "--arca-worker", "invalid", "0" }));
+        }
+
+        [Test]
+        public void ProgressCanBeSentWhileWorkerWaitsForCancellation()
+        {
+            var name = "arca-duplex-test-" + Guid.NewGuid().ToString("N");
+            using (var server = new System.IO.Pipes.NamedPipeServerStream(name, System.IO.Pipes.PipeDirection.InOut, 1,
+                System.IO.Pipes.PipeTransmissionMode.Byte, System.IO.Pipes.PipeOptions.Asynchronous))
+            using (var client = ElevatedOperations.CreateWorkerPipe(name))
+            using (var listening = new System.Threading.ManualResetEvent(false))
+            {
+                var connection = server.BeginWaitForConnection(null, null);
+                client.Connect(3000);
+                server.EndWaitForConnection(connection);
+                connection.AsyncWaitHandle.Close();
+                Exception readError = null, writeError = null;
+                var readThread = new System.Threading.Thread(() =>
+                {
+                    try { listening.Set(); client.ReadByte(); }
+                    catch (Exception e) { readError = e; }
+                }) { IsBackground = true };
+                var writeThread = new System.Threading.Thread(() =>
+                {
+                    try { client.WriteByte(42); client.Flush(); }
+                    catch (Exception e) { writeError = e; }
+                }) { IsBackground = true };
+                readThread.Start();
+                Assert.IsTrue(listening.WaitOne(1000));
+                System.Threading.Thread.Sleep(100); // Let the cancellation read enter Windows before sending progress.
+                var data = new byte[1];
+                var progress = server.BeginRead(data, 0, 1, null, null);
+                bool arrived;
+                try
+                {
+                    writeThread.Start();
+                    arrived = progress.AsyncWaitHandle.WaitOne(2000);
+                }
+                finally
+                {
+                    server.WriteByte(1); server.Flush(); // Release the reader even with the old synchronous bug.
+                    readThread.Join(3000); writeThread.Join(3000);
+                }
+                Assert.IsTrue(arrived, "Progress was blocked by the pending cancellation read.");
+                Assert.AreEqual(1, server.EndRead(progress));
+                progress.AsyncWaitHandle.Close();
+                Assert.AreEqual(42, data[0]);
+                Assert.IsNull(readError);
+                Assert.IsNull(writeError);
+            }
+        }
+
+        [TestCase(CleanTaskState.Idle, false)]
+        [TestCase(CleanTaskState.Pending, false)]
+        [TestCase(CleanTaskState.Analyzing, false)]
+        [TestCase(CleanTaskState.Cleaning, false)]
+        [TestCase(CleanTaskState.Completed, true)]
+        [TestCase(CleanTaskState.Cancelled, true)]
+        [TestCase(CleanTaskState.Failed, true)]
+        [TestCase(CleanTaskState.Skipped, true)]
+        public void InterimProgressIsNotCountedAsAnotherFinalResult(CleanTaskState state, bool expected)
+        {
+            Assert.AreEqual(expected, ElevatedOperations.IsFinalResult(state));
+        }
+
+        [TestCase(0, "No hay registros USB desconectados para limpiar")]
+        [TestCase(1, "Ningún registro USB retirado")]
+        public void EmptyUsbResultDistinguishesNothingToCleanFromFailure(int failures, string expected)
+        {
+            var result = new CleanTaskResult(CleanCategory.Usb) { Failed = failures };
+            StringAssert.StartsWith(expected, CleanText.Brief(result, false));
         }
     }
 }

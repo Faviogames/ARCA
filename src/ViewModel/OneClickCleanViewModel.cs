@@ -305,6 +305,7 @@ namespace WinMemoryCleaner
         {
             string text;
             if (result == null) text = OneClickCleanService.StateText(state);
+            else if (!ElevatedOperations.IsFinalResult(state) && !string.IsNullOrEmpty(result.ProgressMessage)) text = result.ProgressMessage;
             else if (state == CleanTaskState.Skipped || state == CleanTaskState.Failed) text = OneClickCleanService.StateText(state) + (string.IsNullOrEmpty(result.Note) ? string.Empty : " · " + result.Note);
             else if (state == CleanTaskState.Cancelled && result.Bytes == 0 && result.Entries == 0) text = "Cancelado";
             else text = (estimate ? "Se puede liberar " : string.Empty) + CleanText.Brief(result, estimate) + (string.IsNullOrEmpty(result.Note) ? string.Empty : " · " + result.Note);
@@ -312,6 +313,8 @@ namespace WinMemoryCleaner
             if (category == CleanCategory.Extreme) { ExtremeState = state; ExtremeStatus = text; return; }
             var card = Cards.FirstOrDefault(c => c.Category == category);
             if (card != null) card.Show(state, text);
+            if (category == CleanCategory.Usb && !ElevatedOperations.IsFinalResult(state) && result != null && !_isCancelling)
+                Status = text;
         }
 
         private void Finished(IList<CleanTaskResult> results, bool apply)
@@ -340,7 +343,8 @@ namespace WinMemoryCleaner
             }
             Report = OneClickCleanService.Report(results);
             cancelled = cancelled || results.Any(r => r.State == CleanTaskState.Cancelled);
-            Status = (cancelled ? "Cancelado · " : results.All(r => r.State == CleanTaskState.Failed) ? "No se pudo completar · " : "Completado · ") + CleanText.Summary(results);
+            var summary = results.Count == 1 && results[0].Category == CleanCategory.Usb ? CleanText.Brief(results[0], false) : CleanText.Summary(results);
+            Status = (cancelled ? "Cancelado · " : results.All(r => r.State == CleanTaskState.Failed) ? "No se pudo completar · " : "Completado · ") + summary;
         }
 
         private void ClosePreview() { IsPreviewOpen = false; }

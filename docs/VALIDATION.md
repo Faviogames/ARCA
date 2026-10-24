@@ -1,9 +1,12 @@
-﻿# Validación de ARCA 1.0
+# Validación de ARCA 1.0.1
 
 25 de octubre de 2026.
 
 - Compilación Release correcta con .NET SDK 10. Persiste MSB3884 por el archivo heredado AllRules.ruleset ausente.
-- 128 pruebas focalizadas, 0 errores y 0 fallos (build/test.ps1).
+- 144 pruebas focalizadas, 0 errores y 0 fallos (build/test.ps1).
+- Regresión de comunicación real por pipe sin elevación: reproduce el bloqueo de 1.0 al enviar progreso mientras se espera cancelación y pasa con el canal asíncrono. No retira dispositivos.
+- Pruebas de progreso sin duplicar resultados y de verificación posterior: una solicitud aceptada cuyo registro sigue presente o no se puede comprobar no cuenta como retirada.
+- Auditoría local de solo lectura: la detección de ARCA coincide con la diferencia entre registros instalados y presentes (DIGCF_PRESENT). No se borraron dispositivos durante esta auditoría.
 - Las 20 pruebas nuevas cubren selección de operaciones elevadas, rechazo de bits desconocidos, conservación de resultados, argumentos inválidos y creación/eliminación de un acceso directo en una carpeta temporal. No modifican la carpeta Inicio real.
 - Las anteriores cubren mantenimiento con datos de ensayo, USB simulado, top 3, cierre simulado de navegadores y estados/ciclo de vida de la burbuja.
 - Render WPF real de 1 clic clean, opciones avanzadas y burbuja, sin ejecutar limpiezas.
@@ -18,4 +21,4 @@ Los avisos del sandbox por no poder guardar preferencias o informes no provocaro
 
 No se ha aceptado UAC para ejecutar una limpieza real en el equipo del usuario. Falta verificar el recorrido real: abrir sin elevación, cancelar UAC sin cambios ni cierre de navegadores, aceptar una limpieza y comprobar que termina el auxiliar. También falta probar el inicio tras iniciar sesión, retirada real de USB, restauración del registro, servicios de Windows Update y escenarios con varios monitores/juegos.
 
-La causa de la detección heurística del prototipo 4.3 no se confirmó. ARCA 1.0 sigue sin firma Authenticode; las pruebas funcionales no certifican ausencia de detecciones. No se han desactivado protecciones ni creado exclusiones.
+La causa de la detección heurística del prototipo 4.3 no se confirmó. ARCA 1.0.1 sigue sin firma Authenticode; las pruebas funcionales no certifican ausencia de detecciones. No se han desactivado protecciones ni creado exclusiones.

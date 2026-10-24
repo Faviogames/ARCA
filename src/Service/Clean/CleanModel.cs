@@ -78,6 +78,15 @@ namespace WinMemoryCleaner
         /// <summary>Per-item lines for the report file; capped.</summary>
         public IList<string> Details { get { return _details; } }
 
+        internal string ProgressMessage { get; set; }
+        internal Action<string> ProgressChanged { get; set; }
+
+        internal void Progress(string message)
+        {
+            var handler = ProgressChanged;
+            if (handler != null) handler(message);
+        }
+
         internal void AddNote(string note)
         {
             Note = string.IsNullOrEmpty(Note) ? note : Note + " · " + note;
@@ -143,7 +152,9 @@ namespace WinMemoryCleaner
             if (r.Bytes > 0 || r.Files > 0) parts.Add(Size(r.Bytes));
             if (r.Files > 0) parts.Add(Plural(r.Files, "archivo", "archivos"));
             if (r.Entries > 0) parts.Add(Plural(r.Entries, EntryNoun(r.Category, false), EntryNoun(r.Category, true)));
-            if (parts.Count == 0) parts.Add(estimate ? "Nada que limpiar" : "Ya estaba limpio");
+            if (parts.Count == 0) parts.Add(r.Category == CleanCategory.Usb
+                ? r.Failed > 0 ? "Ningún registro USB retirado" : "No hay registros USB desconectados para limpiar"
+                : estimate ? "Nada que limpiar" : "Ya estaba limpio");
             if (r.Skipped > 0) parts.Add(r.Skipped + " omitidos");
             if (r.Failed > 0) parts.Add(r.Failed + " fallos");
             return string.Join(" · ", parts.ToArray());

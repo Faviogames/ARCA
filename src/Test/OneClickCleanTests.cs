@@ -266,6 +266,41 @@ namespace WinMemoryCleaner.Test
             Assert.IsNull(ExtremeCleanTask.UpdateBlocker(k => false, p => p == "TrustedInstaller"));
         }
 
+        [TestCase(true, false, true)]
+        [TestCase(true, true, false)]
+        [TestCase(false, false, false)]
+        [TestCase(false, true, false)]
+        public void UsbOnlyCountsRemovalWhenWindowsNoLongerListsTheRecord(bool accepted, bool registered, bool confirmed)
+        {
+            Assert.AreEqual(confirmed, UsbCleanTask.RemovalConfirmed(accepted, registered));
+            Assert.IsFalse(UsbCleanTask.RemovalConfirmed(accepted, null), "Unknown verification cannot count as a removal.");
+        }
+
+        [Test]
+        public void RunnerPublishesDeviceProgressAndKeepsOneFinalResult()
+        {
+            var task = new FakeTask { Category = CleanCategory.Usb, Body = r =>
+            {
+                r.Progress("Retirando 1/2 · Micrófono");
+                r.Entries++;
+                r.Progress("Retirando 2/2 · Mando");
+                r.Entries++;
+            } };
+            var messages = new List<string>();
+            var results = OneClickCleanService.Run(new List<ICleanTask> { task }, true, (category, state, result) =>
+            {
+                if (result != null && !string.IsNullOrEmpty(result.ProgressMessage))
+                {
+                    Assert.AreEqual(CleanTaskState.Cleaning, state);
+                    messages.Add(result.ProgressMessage);
+                }
+            }, CancellationToken.None);
+            CollectionAssert.AreEqual(new[] { "Retirando 1/2 · Micrófono", "Retirando 2/2 · Mando" }, messages);
+            Assert.AreEqual(1, results.Count);
+            Assert.AreEqual(2, results[0].Entries);
+            Assert.AreEqual(CleanTaskState.Completed, results[0].State);
+        }
+
         private sealed class FakeTask : ICleanTask
         {
             public CleanCategory Category { get; set; }

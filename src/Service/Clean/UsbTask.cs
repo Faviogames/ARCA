@@ -25,6 +25,11 @@ namespace WinMemoryCleaner
             return ShouldRemove(isPresent()) ? (bool?)remove() : null;
         }
 
+        internal static bool RemovalConfirmed(bool requestSucceeded, bool? stillRegistered)
+        {
+            return requestSucceeded && stillRegistered.HasValue && !stillRegistered.Value;
+        }
+
         private static bool IsPresent(int devInst)
         {
             int status, problem;
@@ -36,8 +41,9 @@ namespace WinMemoryCleaner
         {
             foreach (var enumerator in new[] { "USB", "USBSTOR" })
             {
+                result.Progress("Revisando registros de dispositivos " + enumerator + "…");
                 var set = SetupDiGetClassDevsW(IntPtr.Zero, enumerator, IntPtr.Zero, DIGCF_ALLCLASSES);
-                if (set == INVALID_HANDLE_VALUE) { result.AddNote("No se pudo leer la lista de dispositivos " + enumerator); continue; }
+                if (set == INVALID_HANDLE_VALUE) { result.Failed++; result.AddNote("No se pudo leer la lista de dispositivos " + enumerator); continue; }
                 try
                 {
                     var devices = new List<SP_DEVINFO_DATA>();
@@ -45,8 +51,14 @@ namespace WinMemoryCleaner
                     {
                         token.ThrowIfCancellationRequested();
                         var item = new SP_DEVINFO_DATA { cbSize = Marshal.SizeOf(typeof(SP_DEVINFO_DATA)) };
-                        if (!SetupDiEnumDeviceInfo(set, i, ref item)) break;
-                        devices.Add(item);
+                        if (!SetupDiEnumDeviceInfo(set, i, ref item))
+                        {
+                            var error = Marshal.GetLastWin32Error();
+                            if (error != 259) { result.Failed++; result.AddNote("No se pudo completar la revisión de " + enumerator + " · error " + error); }
+                            break;
+                        }
+                        if (ShouldRemove(IsPresent(item.DevInst))) devices.Add(item);
+                        else result.Skipped++;
                     }
                     // Capture the list first so removals do not shift enumeration indices.
                     for (var i = 0; i < devices.Count; i++)
@@ -56,16 +68,81 @@ namespace WinMemoryCleaner
                         if (!ShouldRemove(IsPresent(data.DevInst))) continue;
 
                         var name = Name(set, ref data);
+                        var instanceId = InstanceId(set, ref data);
                         var line = name + "  (USB desconectado · sin espera mínima)";
                         if (!apply) { result.Entries++; result.Detail(line); continue; }
+                        if (instanceId == null) { result.Skipped++; result.Detail("Omitido: no se pudo identificar " + name); continue; }
+                        if (IsRegistered(enumerator, instanceId) == false)
+                        { result.Skipped++; result.Detail("Ya no estaba registrado: " + name); continue; }
                         token.ThrowIfCancellationRequested();
-                        var removed = RemoveIfDisconnected(() => IsPresent(data.DevInst), () => SetupDiCallClassInstaller(DIF_REMOVE, set, ref data));
+                        result.Progress("Retirando " + (i + 1) + "/" + devices.Count + " · " + name);
+                        var error = 0;
+                        var removed = RemoveWithProgress(result, name, () => IsPresent(data.DevInst), () =>
+                        {
+                            var success = SetupDiCallClassInstaller(DIF_REMOVE, set, ref data);
+                            if (!success) error = Marshal.GetLastWin32Error();
+                            return success;
+                        }, token);
                         if (!removed.HasValue) { result.Skipped++; result.Detail("Omitido: ya no se confirma la desconexión de " + name); }
-                        else if (removed.Value) { result.Entries++; result.Detail(line); }
-                        else { result.Failed++; result.Detail("No se pudo retirar: " + line); }
+                        else if (removed.Value)
+                        {
+                            var registered = IsRegistered(enumerator, instanceId);
+                            if (RemovalConfirmed(true, registered)) { result.Entries++; result.Detail("Retirado y verificado: " + line); }
+                            else
+                            {
+                                result.Failed++;
+                                result.Detail("Retirada no confirmada: " + name + (registered == true ? " · el registro sigue apareciendo en Windows" : " · no se pudo verificar la lista de Windows"));
+                            }
+                        }
+                        else { result.Failed++; result.Detail("No se pudo retirar: " + line + " · error " + error); }
                     }
                 }
                 finally { SetupDiDestroyDeviceInfoList(set); }
+            }
+        }
+
+        // Re-open the installed-device list: an installer success code alone does
+        // not prove the record disappeared. Errors stay unconfirmed, never success.
+        private static bool? IsRegistered(string enumerator, string instanceId)
+        {
+            var set = SetupDiGetClassDevsW(IntPtr.Zero, enumerator, IntPtr.Zero, DIGCF_ALLCLASSES);
+            if (set == INVALID_HANDLE_VALUE) return null;
+            try
+            {
+                for (var i = 0; ; i++)
+                {
+                    var data = new SP_DEVINFO_DATA { cbSize = Marshal.SizeOf(typeof(SP_DEVINFO_DATA)) };
+                    if (!SetupDiEnumDeviceInfo(set, i, ref data)) return Marshal.GetLastWin32Error() == 259 ? (bool?)false : null;
+                    var id = InstanceId(set, ref data);
+                    if (id == null) return null;
+                    if (string.Equals(id, instanceId, StringComparison.OrdinalIgnoreCase)) return true;
+                }
+            }
+            finally { SetupDiDestroyDeviceInfoList(set); }
+        }
+
+        private static string InstanceId(IntPtr set, ref SP_DEVINFO_DATA data)
+        {
+            var id = new StringBuilder(1024);
+            int size;
+            return SetupDiGetDeviceInstanceIdW(set, ref data, id, id.Capacity, out size) ? id.ToString() : null;
+        }
+
+        // A driver installer cannot be safely aborted mid-call. Keep the UI informed
+        // while Windows finishes, then honor cancellation before the next device.
+        private static bool? RemoveWithProgress(CleanTaskResult result, string name, Func<bool> present, Func<bool> remove, CancellationToken token)
+        {
+            var gate = new object();
+            var waiting = true;
+            var elapsed = System.Diagnostics.Stopwatch.StartNew();
+            using (var timer = new Timer(_ =>
+            {
+                lock (gate)
+                    if (waiting) result.Progress((token.IsCancellationRequested ? "Cancelación pendiente · " : "Esperando a Windows · ") + name + " · " + (int)elapsed.Elapsed.TotalSeconds + " s");
+            }, null, 8000, 5000))
+            {
+                try { return RemoveIfDisconnected(present, remove); }
+                finally { lock (gate) waiting = false; }
             }
         }
 

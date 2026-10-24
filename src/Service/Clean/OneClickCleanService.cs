@@ -69,6 +69,9 @@ namespace WinMemoryCleaner
                 foreach (var task in tasks)
                 {
                     var result = new CleanTaskResult(task.Category);
+                    var runningState = apply ? CleanTaskState.Cleaning : CleanTaskState.Analyzing;
+                    result.ProgressChanged = message => Notify(progress, task.Category, runningState,
+                        new CleanTaskResult(task.Category) { ProgressMessage = message });
                     if (token.IsCancellationRequested) result.State = CleanTaskState.Cancelled;
                     else
                     {

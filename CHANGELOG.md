@@ -1,5 +1,13 @@
 ﻿# Cambios de ARCA
 
+## 1.0.1 — 25 de octubre de 2026
+
+- Corregido un bloqueo del auxiliar anterior a la limpieza: una lectura síncrona de cancelación impedía enviar el primer progreso. Reproducido con una prueba sin dispositivos reales; corregido con un canal asíncrono en ambos extremos.
+- Progreso USB por dispositivo y aviso con tiempo transcurrido cuando Windows sigue procesando una retirada.
+- Verificación después de cada retirada: solo se cuentan registros que ya no aparecen en la lista de Windows; nombres y errores quedan en el informe.
+- Resumen USB específico y distinción entre «no hay registros desconectados» y una retirada que falló.
+- 144 pruebas focalizadas, sin ejecutar retiradas reales durante la validación.
+
 ## 1.0 — 25 de octubre de 2026
 
 Primera versión de lanzamiento. La numeración 4.x correspondía a prototipos internos.

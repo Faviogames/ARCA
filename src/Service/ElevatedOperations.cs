@@ -35,6 +35,18 @@ namespace WinMemoryCleaner
 
         internal static bool ValidMemoryAreas(int value) { return value > 0 && (value & ~255) == 0; }
 
+        internal static bool IsFinalResult(CleanTaskState state)
+        {
+            return state == CleanTaskState.Completed || state == CleanTaskState.Failed || state == CleanTaskState.Skipped || state == CleanTaskState.Cancelled;
+        }
+
+        internal static NamedPipeClientStream CreateWorkerPipe(string name)
+        {
+            // A synchronous pipe serializes reads and writes: the cancellation read
+            // would block the worker's very first progress packet indefinitely.
+            return new NamedPipeClientStream(".", name, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Identification);
+        }
+
         internal static IList<CleanTaskResult> Clean(CleanCategory selected, Action<CleanCategory, CleanTaskState, CleanTaskResult> progress, CancellationToken token)
         {
             var results = new List<CleanTaskResult>();
@@ -47,7 +59,7 @@ namespace WinMemoryCleaner
                 var category = (CleanCategory)reader.ReadInt32();
                 var state = (CleanTaskState)reader.ReadInt32();
                 var result = reader.ReadBoolean() ? ReadResult(reader, category, state) : null;
-                if (result != null) results.Add(result);
+                if (result != null && IsFinalResult(state)) results.Add(result);
                 if (progress != null) progress(category, state, result);
                 return true;
             }, token);
@@ -145,7 +157,7 @@ namespace WinMemoryCleaner
                 !Guid.TryParseExact(arguments[1].Substring(5), "N", out nonce) || !int.TryParse(arguments[2], out parent) || !IsAdministrator) return true;
             try
             {
-                using (var pipe = new NamedPipeClientStream(".", arguments[1], PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.Identification))
+                using (var pipe = CreateWorkerPipe(arguments[1]))
                 {
                     pipe.Connect(15000);
                     uint server;
@@ -180,9 +192,12 @@ namespace WinMemoryCleaner
                             {
                                 OneClickCleanService.Run((CleanCategory)selected, true, (c, s, r) =>
                                 {
-                                    writer.Write((byte)1); writer.Write((int)c); writer.Write((int)s); writer.Write(r != null);
-                                    if (r != null) WriteResult(writer, r);
-                                    writer.Flush();
+                                    lock (writer)
+                                    {
+                                        writer.Write((byte)1); writer.Write((int)c); writer.Write((int)s); writer.Write(r != null);
+                                        if (r != null) WriteResult(writer, r);
+                                        writer.Flush();
+                                    }
                                 }, cancel.Token);
                             }
                             else if (operation == "ram" && ValidMemoryAreas(selected))
@@ -211,13 +226,13 @@ namespace WinMemoryCleaner
         internal static void WriteResult(BinaryWriter writer, CleanTaskResult result)
         {
             writer.Write(result.Bytes); writer.Write(result.Files); writer.Write(result.Entries); writer.Write(result.Skipped); writer.Write(result.Failed);
-            writer.Write(result.Note ?? ""); writer.Write(result.Details.Count);
+            writer.Write(result.Note ?? ""); writer.Write(result.ProgressMessage ?? ""); writer.Write(result.Details.Count);
             foreach (var detail in result.Details) writer.Write(detail);
         }
 
         internal static CleanTaskResult ReadResult(BinaryReader reader, CleanCategory category, CleanTaskState state)
         {
-            var result = new CleanTaskResult(category) { State = state, Bytes = reader.ReadInt64(), Files = reader.ReadInt32(), Entries = reader.ReadInt32(), Skipped = reader.ReadInt32(), Failed = reader.ReadInt32(), Note = reader.ReadString() };
+            var result = new CleanTaskResult(category) { State = state, Bytes = reader.ReadInt64(), Files = reader.ReadInt32(), Entries = reader.ReadInt32(), Skipped = reader.ReadInt32(), Failed = reader.ReadInt32(), Note = reader.ReadString(), ProgressMessage = reader.ReadString() };
             var count = reader.ReadInt32();
             if (count < 0 || count > 401) throw new InvalidDataException("Informe no válido.");
             for (var i = 0; i < count; i++) result.Detail(reader.ReadString());

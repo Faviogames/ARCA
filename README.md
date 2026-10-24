@@ -8,9 +8,9 @@ Basada en [Windows Memory Cleaner](https://github.com/IgorMundstein/WinMemoryCle
 
 ## Descargar y ejecutar
 
-Descarga el portable desde [Releases](https://github.com/Faviogames/ARCA/releases/tag/v1.0), extráelo y abre `ARCA.exe`. Conserva `nunit.framework.dll` junto al ejecutable: el proyecto heredado incluye sus pruebas en el ensamblado. Cierra la versión anterior desde la bandeja antes de abrir una nueva.
+Descarga el portable desde [Releases](https://github.com/Faviogames/ARCA/releases/tag/v1.0.1), extráelo y abre `ARCA.exe`. Conserva `nunit.framework.dll` junto al ejecutable: el proyecto heredado incluye sus pruebas en el ensamblado. Cierra la versión anterior desde la bandeja antes de abrir una nueva.
 
-Entrega local: `releases/ARCA-v1.0-portable.zip` y `releases/ARCA-v1.0-source.zip`. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
+Entrega local: `releases/v1.0.1/ARCA-v1.0.1-portable.zip` y `releases/v1.0.1/ARCA-v1.0.1-source.zip`. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
 
 ARCA abre sin pedir administrador. La limpieza completa de RAM, los temporales del sistema, el registro, USB y Extrema solicitan autorización de Windows al ejecutarse. Un auxiliar de la misma aplicación realiza la operación y termina; no se instala ningún servicio. Cancelar el aviso cancela esa operación. Las cachés del usuario y la papelera pueden limpiarse sin elevar la app.
 
@@ -33,7 +33,11 @@ Se recuerdan las categorías. La primera ejecución ofrece vista previa; despué
 
 La casilla opcional «Cerrar navegadores» pertenece a la limpieza de RAM y fuerza su cierre cuando se solicita esa limpieza; puede perderse trabajo sin guardar. El mantenimiento de cachés omite los navegadores abiertos.
 
-## Versión 1.0
+## Versión 1.0.1
+
+Corrige el bloqueo de comunicación del auxiliar que podía impedir empezar una limpieza en 1.0. USB muestra el registro en curso, comprueba después de cada retirada que desapareció de la lista de Windows y guarda nombres y errores en el informe. No se cuentan las retiradas cuya eliminación no se confirma.
+
+## Lanzamiento 1.0
 
 Primera versión de lanzamiento de ARCA. Los números 4.x identificaban prototipos internos. Incluye inicio con Windows por usuario, permisos solicitados al limpiar y ayudas breves por categoría. Conserva el diseño de RAM, la burbuja circular, los iconos de 256 px y el botón «Limpiar PC».
 

@@ -1,4 +1,4 @@
-param([string]$Configuration = 'Release')
+param([string]$Configuration = 'Release', [string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $assembly = Join-Path $root "src/bin/$Configuration/WinMemoryCleaner.exe"
@@ -8,7 +8,8 @@ $gitOptions = @('-c', "safe.directory=$root", '-C', $root)
 if ($LASTEXITCODE -ne 0) { throw 'Commit source changes before packaging.' }
 $version = [Diagnostics.FileVersionInfo]::GetVersionInfo($assembly)
 $label = 'ARCA-v{0}.{1}' -f $version.FileMajorPart,$version.FileMinorPart
-$release = Join-Path $root 'releases'
+if ($version.FileBuildPart -gt 0) { $label += '.' + $version.FileBuildPart }
+$release = if ($OutputDirectory) { [IO.Path]::GetFullPath((Join-Path $root $OutputDirectory)) } else { Join-Path $root 'releases' }
 $portable = Join-Path $release 'portable'
 if (Test-Path -LiteralPath $portable) { throw 'Archive the previous local releases folder before packaging.' }
 New-Item -ItemType Directory -Path $portable -Force | Out-Null
@@ -21,7 +22,7 @@ foreach ($name in @('LICENSE','THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPat
 Copy-Item -LiteralPath (Join-Path $root 'src/packages/NUnit.2.6.4/license.txt') -Destination (Join-Path $portable 'NUNIT-LICENSE.txt')
 Copy-Item -LiteralPath $sourceZip -Destination $portable
 $readme = @"
-ARCA 1.0 - Another RAM Cleaner Application
+$label - Another RAM Cleaner Application
 
 Extract the complete folder and open ARCA.exe. Keep nunit.framework.dll next to it.
 The window opens without administrator rights. System cleaning requests Windows authorization.
