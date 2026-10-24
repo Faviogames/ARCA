@@ -1,0 +1,22 @@
+name: Build and focused tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: NuGet/setup-nuget@v2
+      - name: Restore and build
+        shell: powershell
+        run: ./build/build.ps1
+      - name: Focused tests
+        shell: powershell
+        run: ./build/test.ps1

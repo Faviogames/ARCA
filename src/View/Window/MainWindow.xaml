@@ -1,0 +1,231 @@
+﻿<local:View x:Class="WinMemoryCleaner.MainWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:local="clr-namespace:WinMemoryCleaner" Title="ARCA" Width="1160" Height="650"
+ FontFamily="Segoe UI" Background="Transparent" Foreground="#F5F4DF" AllowsTransparency="True"
+ WindowStyle="None" ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen"
+ DataContext="{Binding MainViewModel, Source={StaticResource ViewModelLocator}}">
+ <local:View.Resources>
+  <ResourceDictionary>
+   <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="RamControls.xaml"/></ResourceDictionary.MergedDictionaries>
+   <Style TargetType="TextBlock"><Setter Property="Foreground" Value="#F3F3E6"/><Setter Property="FontFamily" Value="Segoe UI"/><Setter Property="FontSize" Value="14"/></Style>
+   <Style x:Key="QuietButton" TargetType="Button">
+    <Setter Property="Foreground" Value="#E0EADC"/><Setter Property="Background" Value="#163F30"/><Setter Property="BorderBrush" Value="#598572"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="15,10"/><Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="Surface" CornerRadius="9" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Opacity" Value="0.8"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="#FCDE93"/><Setter TargetName="Surface" Property="BorderThickness" Value="2"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+   </Style>
+   <Style x:Key="MintSwitch" TargetType="CheckBox"><Setter Property="Cursor" Value="Hand"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox"><Grid Background="Transparent"><Grid.ColumnDefinitions><ColumnDefinition Width="66"/><ColumnDefinition/></Grid.ColumnDefinitions><Border x:Name="Track" Width="54" Height="29" CornerRadius="15" Background="#435A4C" HorizontalAlignment="Left" BorderBrush="#7DB394" BorderThickness="1"><Ellipse x:Name="Thumb" Width="23" Height="23" Fill="#F4F4E5" HorizontalAlignment="Left" Margin="2"/></Border><ContentPresenter Grid.Column="1" VerticalAlignment="Center"/><Rectangle x:Name="Focus" Grid.ColumnSpan="2" Visibility="Collapsed" Stroke="#FCDE93" StrokeDashArray="1 2"/></Grid><ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="Track" Property="Background" Value="#3FC989"/><Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Focus" Property="Visibility" Value="Visible"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+   <Style x:Key="Card" TargetType="Border"><Setter Property="CornerRadius" Value="16"/><Setter Property="BorderBrush" Value="#42735A"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Background"><Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#182C26"/><GradientStop Color="#0C211A" Offset="1"/></LinearGradientBrush></Setter.Value></Setter></Style>
+   <Style x:Key="SectionTab" TargetType="RadioButton"><Setter Property="Foreground" Value="#E0EADC"/><Setter Property="FontSize" Value="15"/><Setter Property="Cursor" Value="Hand"/><Setter Property="GroupName" Value="Sections"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton"><Border x:Name="Surface" CornerRadius="8" Background="Transparent" Padding="20,8" MinWidth="200"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="#1F4A38"/></Trigger><Trigger Property="IsChecked" Value="True"><Setter TargetName="Surface" Property="Background" Value="#79F3B8"/><Setter Property="Foreground" Value="#0B3020"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="#FCDE93"/><Setter TargetName="Surface" Property="BorderThickness" Value="2"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+   </Style>
+   <Style x:Key="CleanTile" TargetType="CheckBox"><Setter Property="Cursor" Value="Hand"/><Setter Property="Margin" Value="7"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox">
+     <Grid>
+      <Border x:Name="Tile" CornerRadius="10" BorderThickness="1" BorderBrush="#33493D" Padding="20,10,14,10">
+       <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#1B2722"/><GradientStop Offset="1" Color="#111915"/></LinearGradientBrush></Border.Background>
+       <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition/><ColumnDefinition Width="26"/></Grid.ColumnDefinitions>
+        <Image x:Name="Glyph" Width="50" Height="50" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"><Image.Source><BitmapImage UriSource="{Binding IconImage}" DecodePixelWidth="160" CacheOption="OnLoad"/></Image.Source></Image>
+        <StackPanel x:Name="Texts" Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" Foreground="#F3F3E6"/><TextBlock x:Name="LineText" Text="{Binding Line}" FontSize="11.5" Foreground="#A9BFAD" Margin="0,4,0,0" TextWrapping="Wrap" MaxHeight="46" TextTrimming="CharacterEllipsis"/></StackPanel>
+        <Border x:Name="Box" Grid.Column="2" Width="22" Height="22" CornerRadius="5" BorderBrush="#6C8D78" BorderThickness="1.5" Background="#17241C" VerticalAlignment="Top"><Path x:Name="Check" Visibility="Collapsed" Data="M 3 9 L 7.5 13.5 L 16 4" Stroke="#0B3020" StrokeThickness="2.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Margin="1"/></Border>
+       </Grid>
+      </Border>
+      <!-- Chip-style pins on the left edge -->
+      <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center" Margin="-1,0,0,0" IsHitTestVisible="False"><Border Width="5" Height="15" CornerRadius="0,2,2,0" Background="#0A120E" Margin="0,0,0,12"/><Border Width="5" Height="15" CornerRadius="0,2,2,0" Background="#0A120E"/></StackPanel>
+     </Grid>
+     <ControlTemplate.Triggers>
+      <Trigger Property="IsChecked" Value="True"><Setter TargetName="Box" Property="Background" Value="#79F3B8"/><Setter TargetName="Box" Property="BorderBrush" Value="#79F3B8"/><Setter TargetName="Check" Property="Visibility" Value="Visible"/></Trigger>
+      <Trigger Property="IsChecked" Value="False"><Setter TargetName="Glyph" Property="Opacity" Value="0.65"/><Setter TargetName="Texts" Property="Opacity" Value="0.7"/></Trigger>
+      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Tile" Property="BorderBrush" Value="#5E8E74"/></Trigger>
+      <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Tile" Property="BorderBrush" Value="#FCDE93"/></Trigger>
+      <DataTrigger Binding="{Binding State}" Value="Pending"><Setter TargetName="LineText" Property="Foreground" Value="#8FA394"/></DataTrigger>
+      <DataTrigger Binding="{Binding State}" Value="Analyzing"><Setter TargetName="Tile" Property="BorderBrush" Value="#79F3B8"/><Setter TargetName="LineText" Property="Foreground" Value="#9BF2C6"/></DataTrigger>
+      <DataTrigger Binding="{Binding State}" Value="Cleaning"><Setter TargetName="Tile" Property="BorderBrush" Value="#79F3B8"/><Setter TargetName="LineText" Property="Foreground" Value="#9BF2C6"/><Setter TargetName="Tile" Property="Effect"><Setter.Value><DropShadowEffect Color="#64F4AA" BlurRadius="14" ShadowDepth="0" Opacity="0.5"/></Setter.Value></Setter></DataTrigger>
+      <DataTrigger Binding="{Binding State}" Value="Completed"><Setter TargetName="Tile" Property="BorderBrush" Value="#3E9A6C"/><Setter TargetName="LineText" Property="Foreground" Value="#9BE8C0"/></DataTrigger>
+      <DataTrigger Binding="{Binding State}" Value="Skipped"><Setter TargetName="Tile" Property="BorderBrush" Value="#A8873F"/><Setter TargetName="LineText" Property="Foreground" Value="#E6C987"/></DataTrigger>
+      <DataTrigger Binding="{Binding State}" Value="Failed"><Setter TargetName="Tile" Property="BorderBrush" Value="#B9604F"/><Setter TargetName="LineText" Property="Foreground" Value="#F0A496"/></DataTrigger>
+      <Trigger Property="IsEnabled" Value="False"><Setter Property="Cursor" Value="Arrow"/></Trigger>
+     </ControlTemplate.Triggers>
+    </ControlTemplate></Setter.Value></Setter>
+   </Style>
+   <Style x:Key="AmberSwitch" TargetType="CheckBox" BasedOn="{StaticResource MintSwitch}"><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox"><Grid Background="Transparent"><Grid.ColumnDefinitions><ColumnDefinition Width="62"/><ColumnDefinition/></Grid.ColumnDefinitions><Border x:Name="Track" Width="48" Height="26" CornerRadius="13" Background="#4A4535" HorizontalAlignment="Left" BorderBrush="#B99A5C" BorderThickness="1"><Ellipse x:Name="Thumb" Width="20" Height="20" Fill="#F4F0E0" HorizontalAlignment="Left" Margin="2"/></Border><ContentPresenter Grid.Column="1" VerticalAlignment="Center"/><Rectangle x:Name="Focus" Grid.ColumnSpan="2" Visibility="Collapsed" Stroke="#FCDE93" StrokeDashArray="1 2"/></Grid><ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="Track" Property="Background" Value="#E3A646"/><Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Focus" Property="Visibility" Value="Visible"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.6"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+   <DataTemplate x:Key="ChipTemplate">
+    <Grid Margin="5,0" ToolTip="{Binding Description}" AutomationProperties.Name="{Binding Description}">
+     <Grid Margin="0,10"><Grid.Background><DrawingBrush TileMode="Tile" Viewport="0,0,8,10" ViewportUnits="Absolute"><DrawingBrush.Drawing><GeometryDrawing Brush="#B9B5A0" Geometry="M0,2 L8,2 8,5 0,5 Z"/></DrawingBrush.Drawing></DrawingBrush></Grid.Background></Grid>
+     <Border Margin="4,0" CornerRadius="5" BorderBrush="#060F0C" BorderThickness="2" Background="#101714">
+      <Border CornerRadius="3" BorderBrush="#425047" BorderThickness="1" Padding="3,8,3,9">
+       <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#252D28"/><GradientStop Offset="1" Color="#111814"/></LinearGradientBrush></Border.Background>
+       <Grid><Grid.RowDefinitions><RowDefinition Height="18"/><RowDefinition/><RowDefinition Height="18"/><RowDefinition Height="17"/></Grid.RowDefinitions>
+        <TextBlock Text="{Binding Rank}" FontSize="8" Foreground="#9AAE98" TextAlignment="Center" FontWeight="SemiBold"/>
+        <TextBlock Grid.Row="1" Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" TextAlignment="Center" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="2" Text="{Binding Usage}" FontSize="10" Foreground="#B9CFBB" TextAlignment="Center"/>
+        <Border Grid.Row="3" Width="33" Height="6" CornerRadius="3" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+         <Border.Style><Style TargetType="Border"><Setter Property="Background" Value="#35433B"/><Style.Triggers><DataTrigger Binding="{Binding IsLit}" Value="True"><Setter Property="Background" Value="#77F4B8"/><Setter Property="Effect"><Setter.Value><DropShadowEffect Color="#64F4AA" BlurRadius="13" ShadowDepth="0" Opacity="0.65"/></Setter.Value></Setter></DataTrigger></Style.Triggers></Style></Border.Style>
+        </Border>
+       </Grid>
+      </Border>
+     </Border>
+    </Grid>
+   </DataTemplate>
+  </ResourceDictionary>
+ </local:View.Resources>
+ <Viewbox Stretch="Uniform" Margin="6">
+  <Grid x:Name="DashboardSurface" Width="1120" Height="610">
+   <local:RamBoardSurface IsHitTestVisible="False"/>
+   <Grid Margin="55,19,55,34">
+    <Grid.RowDefinitions><RowDefinition Height="78"/><RowDefinition Height="184"/><RowDefinition Height="62"/><RowDefinition Height="124"/><RowDefinition Height="78"/><RowDefinition Height="26"/></Grid.RowDefinitions>
+    <Grid MouseLeftButtonDown="OnTitleDrag" Background="Transparent">
+     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+      <Path Data="M2,3 H36 V24 H2 Z M8,8 H13 V18 H8 Z M18,8 H23 V18 H18 Z M28,8 H32 V18 H28 Z M7,24 V30 M13,24 V30 M19,24 V30 M25,24 V30 M31,24 V30" Fill="#EBD695" Stroke="#EBD695" StrokeThickness="1.5" Width="43" Height="35" Stretch="Uniform" Margin="0,0,18,0"/>
+      <StackPanel><TextBlock Text="ARCA" ToolTip="Another RAM Cleaner Application" FontWeight="SemiBold" FontSize="28"/><TextBlock Text="Tu memoria, bajo control" FontSize="16" Foreground="#D0D8B3" Margin="0,2,0,0"/></StackPanel>
+     </StackPanel>
+     <Border HorizontalAlignment="Center" VerticalAlignment="Center" Margin="40,0,0,0" CornerRadius="11" Background="#0D2A1F" BorderBrush="#3F6E57" BorderThickness="1" Padding="3">
+      <StackPanel Orientation="Horizontal">
+       <RadioButton x:Name="RamTab" Style="{StaticResource SectionTab}" IsChecked="True" AutomationProperties.Name="Memoria RAM"><StackPanel Orientation="Horizontal"><Path Data="M1,2 H25 V14 H1 Z M5,5 H9 V11 H5 Z M11,5 H15 V11 H11 Z M17,5 H21 V11 H17 Z M4,14 V18 M9,14 V18 M14,14 V18 M19,14 V18 M23,14 V18" Stroke="{Binding Foreground,RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.5" Width="24" Height="17" Stretch="Uniform" Margin="0,0,12,0"/><TextBlock Text="Memoria RAM" Foreground="{Binding Foreground,RelativeSource={RelativeSource AncestorType=RadioButton}}" FontSize="15"/></StackPanel></RadioButton>
+       <RadioButton x:Name="CleanTab" Style="{StaticResource SectionTab}" AutomationProperties.Name="1 clic clean"><StackPanel Orientation="Horizontal"><Path Data="M20,1 L25,4 17,22 11,19 Z M8,20 L20,25 17,38 0,30 Z M5,28 L4,33 M10,30 L9,35 M15,32 L14,37" Fill="{Binding Foreground,RelativeSource={RelativeSource AncestorType=RadioButton}}" Width="16" Height="20" Stretch="Uniform" Margin="0,0,12,0"/><TextBlock Text="1 clic clean" Foreground="{Binding Foreground,RelativeSource={RelativeSource AncestorType=RadioButton}}" FontSize="15"/></StackPanel></RadioButton>
+      </StackPanel>
+     </Border>
+     <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal"><Button Style="{StaticResource QuietButton}" Content="—" Width="40" Height="38" Padding="0" Click="OnMinimizeButtonClick" ToolTip="Minimizar al escritorio" AutomationProperties.Name="Minimizar"/><Button Style="{StaticResource QuietButton}" Content="✕" Width="40" Height="38" Padding="0" Margin="9,0,0,0" Click="OnCloseButtonClick" ToolTip="Ocultar en la bandeja" AutomationProperties.Name="Ocultar ventana"/></StackPanel>
+    </Grid>
+    <Grid x:Name="RamSection" Grid.Row="1" Grid.RowSpan="4" Visibility="{Binding IsChecked,ElementName=RamTab,Converter={StaticResource BooleanToVisibilityConverter}}">
+    <Grid.RowDefinitions><RowDefinition Height="184"/><RowDefinition Height="62"/><RowDefinition Height="124"/><RowDefinition Height="78"/></Grid.RowDefinitions>
+    <Border Grid.Row="0" Style="{StaticResource Card}" Padding="20,12">
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="174"/><ColumnDefinition/></Grid.ColumnDefinitions>
+      <StackPanel VerticalAlignment="Center"><TextBlock Text="MEMORIA EN USO" FontSize="12"/><StackPanel Orientation="Horizontal"><TextBlock Text="{Binding Computer.Memory.Physical.Used.Percentage}" FontSize="66" FontWeight="SemiBold"/><TextBlock Text=" %" FontSize="40" VerticalAlignment="Center"/></StackPanel><TextBlock x:Name="TopAppsStatus" Text="TOP 3 · MAYOR CONSUMO" FontSize="9" Foreground="#9FB79E" TextWrapping="Wrap"/></StackPanel>
+      <Grid Grid.Column="1" Margin="0,0,-6,0">
+       <local:RamBoardSurface IsHitTestVisible="False" ShowContacts="False"/>
+       <ItemsControl x:Name="MemoryChips" ItemsSource="{Binding Chips, RelativeSource={RelativeSource AncestorType={x:Type local:MainWindow}}}" ItemTemplate="{StaticResource ChipTemplate}" Margin="22,23,22,27"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Rows="1" Columns="8"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+      </Grid>
+     </Grid>
+    </Border>
+    <Border Grid.Row="1" Style="{StaticResource Card}" Margin="5,0,5,0" Padding="24,0">
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"><Border Width="20" Height="20" CornerRadius="4" Background="#75EFB2" Margin="0,0,15,0"/><TextBlock FontSize="20" FontWeight="SemiBold"><Run Text="{Binding Computer.Memory.Physical.Used.Value,Mode=OneWay,StringFormat={}{0:0.#}}"/><Run Text=" "/><Run Text="{Binding Computer.Memory.Physical.Used.Unit,Mode=OneWay}"/><Run Text=" en uso" FontWeight="Normal" FontSize="15"/></TextBlock></StackPanel>
+      <Border Grid.Column="1" BorderThickness="1,0" BorderBrush="#4C7162" Margin="0,15"/>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"><Border Width="20" Height="20" CornerRadius="4" Background="#46564F" Margin="0,0,15,0"/><TextBlock FontSize="20" FontWeight="SemiBold"><Run Text="{Binding Computer.Memory.Physical.Free.Value,Mode=OneWay,StringFormat={}{0:0.#}}"/><Run Text=" "/><Run Text="{Binding Computer.Memory.Physical.Free.Unit,Mode=OneWay}"/><Run Text=" disponibles" FontWeight="Normal" FontSize="15"/></TextBlock></StackPanel>
+      <TextBlock Grid.Column="2" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"><Run Text="{Binding Computer.Memory.Physical.Total.Value,Mode=OneWay,StringFormat={}{0:0.#}}"/><Run Text=" "/><Run Text="{Binding Computer.Memory.Physical.Total.Unit,Mode=OneWay}"/><Run Text=" totales" FontWeight="Normal" FontSize="15"/></TextBlock>
+     </Grid>
+    </Border>
+    <Grid Grid.Row="2"><Grid.RowDefinitions><RowDefinition Height="80"/><RowDefinition Height="5"/><RowDefinition/></Grid.RowDefinitions>
+     <Button x:Name="Optimize" Command="{Binding OptimizeCommand}" Width="440" Height="58" Background="#79F3B8" Foreground="#082C1D" BorderBrush="#C0FFDC">
+      <Button.Style><Style TargetType="Button" BasedOn="{StaticResource QuietButton}"><Style.Triggers><DataTrigger Binding="{Binding IsOptimizationRunning}" Value="True"><Setter Property="IsEnabled" Value="False"/></DataTrigger></Style.Triggers></Style></Button.Style>
+      <StackPanel Orientation="Horizontal"><Path Data="M20,1 L25,4 17,22 11,19 Z M8,20 L20,25 17,38 0,30 Z M5,28 L4,33 M10,30 L9,35 M15,32 L14,37" Fill="#0B3724" Stroke="#0B3724" StrokeThickness="1" Width="27" Height="32" Stretch="Uniform" Margin="0,0,19,0"/><TextBlock x:Name="CleanButtonLabel" Text="Limpiar memoria" Foreground="#0B3020" FontSize="25" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel>
+     </Button>
+     <ProgressBar Grid.Row="1" Width="420" Height="3" Foreground="#7FF5B7" IsIndeterminate="True" Visibility="{Binding IsOptimizationRunning,Converter={StaticResource BooleanToVisibilityConverter}}"/>
+     <TextBlock Grid.Row="2" x:Name="CleaningStatus" Text="Limpieza manual · Tú decides cuándo" Foreground="#B4CDB6" FontSize="11" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center"/>
+    </Grid>
+    <Border Grid.Row="3" Style="{StaticResource Card}" Padding="20,12">
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="350"/><ColumnDefinition Width="245"/><ColumnDefinition/></Grid.ColumnDefinitions>
+      <CheckBox IsChecked="{Binding FloatingBubbleEnabled}" Style="{StaticResource MintSwitch}"><StackPanel><TextBlock Text="Burbuja en el escritorio" FontSize="15"/><TextBlock Text="Visible solo en el escritorio" Foreground="#ADC2AD" FontSize="10" Margin="0,4,0,0"/></StackPanel></CheckBox>
+      <CheckBox Grid.Column="1" Content="Cerrar navegadores" FontSize="15" VerticalAlignment="Center" IsChecked="{Binding CloseBrowsersBeforeCleaning,Mode=TwoWay}" IsEnabled="{Binding IsOptimizationRunning,Converter={StaticResource InverseBooleanConverter}}" ToolTip="Fuerza el cierre al limpiar, incluso desde la burbuja. Puedes perder trabajo sin guardar."/>
+      <ToggleButton x:Name="AdvancedToggle" Grid.Column="2" Content="⚙   Opciones avanzadas" Foreground="#EFF3E4" FontSize="14" Cursor="Hand" Margin="10,0,0,0"><ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><Border x:Name="Surface" CornerRadius="9" BorderBrush="#608C73" BorderThickness="1" Background="#214C3A" Padding="16,9"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="#306548"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="#FCDE93"/></Trigger></ControlTemplate.Triggers></ControlTemplate></ToggleButton.Template></ToggleButton>
+     </Grid>
+    </Border>
+    </Grid>
+    <!-- 1 clic clean: disk maintenance. Independent from the RAM cleaning and from the bubble. -->
+    <Grid x:Name="CleanSection" Grid.Row="1" Grid.RowSpan="4" DataContext="{Binding OneClick,RelativeSource={RelativeSource AncestorType={x:Type local:MainWindow}}}" Visibility="{Binding IsChecked,ElementName=CleanTab,Converter={StaticResource BooleanToVisibilityConverter}}">
+     <Border Style="{StaticResource Card}" Padding="24,14,24,10">
+      <Grid><Grid.RowDefinitions><RowDefinition Height="58"/><RowDefinition Height="216"/><RowDefinition Height="52"/><RowDefinition Height="70"/><RowDefinition/></Grid.RowDefinitions>
+       <StackPanel Margin="7,0,0,0"><TextBlock Text="1 clic clean" FontSize="30" FontWeight="SemiBold"/><TextBlock Text="Mantenimiento del equipo, en un solo clic." FontSize="14" Foreground="#C6D4BD" Margin="1,1,0,0"/></StackPanel>
+       <ItemsControl Grid.Row="1" ItemsSource="{Binding Cards}" AlternationCount="5">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><Grid><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions></Grid></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Grid.ColumnSpan" Value="2"/><Style.Triggers>
+         <Trigger Property="ItemsControl.AlternationIndex" Value="1"><Setter Property="Grid.Column" Value="2"/></Trigger>
+         <Trigger Property="ItemsControl.AlternationIndex" Value="2"><Setter Property="Grid.Column" Value="4"/></Trigger>
+         <Trigger Property="ItemsControl.AlternationIndex" Value="3"><Setter Property="Grid.Row" Value="1"/><Setter Property="Grid.ColumnSpan" Value="3"/></Trigger>
+         <Trigger Property="ItemsControl.AlternationIndex" Value="4"><Setter Property="Grid.Row" Value="1"/><Setter Property="Grid.Column" Value="3"/><Setter Property="Grid.ColumnSpan" Value="3"/></Trigger>
+        </Style.Triggers></Style></ItemsControl.ItemContainerStyle>
+        <ItemsControl.ItemTemplate><DataTemplate><CheckBox Style="{StaticResource CleanTile}" IsChecked="{Binding IsChecked,Mode=TwoWay}" IsEnabled="{Binding DataContext.IsIdle,RelativeSource={RelativeSource AncestorType=ItemsControl}}" AutomationProperties.Name="{Binding Title}" ToolTip="{Binding Help}"/></DataTemplate></ItemsControl.ItemTemplate>
+       </ItemsControl>
+       <Border Grid.Row="2" Margin="7,5,7,5" CornerRadius="10" BorderThickness="1" Padding="16,0">
+        <Border.Style><Style TargetType="Border"><Setter Property="BorderBrush" Value="#6E5D36"/><Setter Property="Background" Value="#1A1E15"/><Style.Triggers><DataTrigger Binding="{Binding Extreme}" Value="True"><Setter Property="BorderBrush" Value="#D39B45"/><Setter Property="Background" Value="#262213"/></DataTrigger><DataTrigger Binding="{Binding ExtremeState}" Value="Cleaning"><Setter Property="Effect"><Setter.Value><DropShadowEffect Color="#E3A646" BlurRadius="14" ShadowDepth="0" Opacity="0.5"/></Setter.Value></Setter></DataTrigger></Style.Triggers></Style></Border.Style>
+        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition/></Grid.ColumnDefinitions>
+         <CheckBox Style="{StaticResource AmberSwitch}" IsChecked="{Binding Extreme,Mode=TwoWay}" IsEnabled="{Binding IsIdle}" VerticalAlignment="Center" AutomationProperties.Name="Limpieza extrema" ToolTip="Limpia shaders de GPU, restos de Windows Update y optimización de distribución. Conserva el historial, las cookies, las contraseñas, los marcadores y las sesiones. Deberás cargar shaders de nuevo.">
+          <StackPanel Orientation="Horizontal"><Image Width="34" Height="34" Stretch="Uniform" Margin="0,0,9,0" RenderOptions.BitmapScalingMode="HighQuality"><Image.Source><BitmapImage UriSource="/WinMemoryCleaner;component/Resources/Images/Clean/extrema.png" DecodePixelWidth="112" CacheOption="OnLoad"/></Image.Source></Image><StackPanel><TextBlock Text="Limpieza extrema" FontSize="15" FontWeight="SemiBold" Foreground="#F1C77A"/><TextBlock Text="Shaders de GPU · Restos de Windows Update" FontSize="10.5" Foreground="#C9BC98"/></StackPanel></StackPanel>
+         </CheckBox>
+         <TextBlock Grid.Column="1" FontSize="11" TextWrapping="Wrap" TextAlignment="Right" VerticalAlignment="Center" Margin="18,0,0,0">
+          <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="Desactivada · solo se aplica si la activas"/><Setter Property="Foreground" Value="#9C9A80"/><Style.Triggers>
+           <DataTrigger Binding="{Binding Extreme}" Value="True"><Setter Property="Text" Value="Deberás cargar shaders de nuevo"/><Setter Property="Foreground" Value="#E6C987"/></DataTrigger>
+           <DataTrigger Binding="{Binding ExtremeStatus,Converter={StaticResource NullToVisibilityConverter}}" Value="Visible"><Setter Property="Text" Value="{Binding ExtremeStatus}"/><Setter Property="Foreground" Value="#F3DCA4"/></DataTrigger>
+          </Style.Triggers></Style></TextBlock.Style>
+         </TextBlock>
+        </Grid>
+       </Border>
+       <Grid Grid.Row="3"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="460"/><ColumnDefinition/></Grid.ColumnDefinitions>
+        <Button Content="Ver detalles" Click="OnCleanDetails" Style="{StaticResource QuietButton}" Padding="16,8" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="7,0,0,0" Visibility="{Binding HasReport,Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        <Button Grid.Column="1" x:Name="CleanStart" Command="{Binding StartCommand}" Width="440" Height="58" Background="#79F3B8" Foreground="#082C1D" BorderBrush="#C0FFDC" Style="{StaticResource QuietButton}" VerticalAlignment="Center">
+         <StackPanel Orientation="Horizontal"><Path Data="M20,1 L25,4 17,22 11,19 Z M8,20 L20,25 17,38 0,30 Z M5,28 L4,33 M10,30 L9,35 M15,32 L14,37" Fill="#0B3724" Width="23" Height="28" Stretch="Uniform" Margin="0,0,17,0"/><TextBlock Text="{Binding ButtonText}" Foreground="#0B3020" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel>
+        </Button>
+        <Button Grid.Column="2" Content="⚙  Opciones" Click="OnCleanDetails" Style="{StaticResource QuietButton}" Padding="16,8" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,7,0"/>
+       </Grid>
+       <StackPanel Grid.Row="4" VerticalAlignment="Top">
+        <ProgressBar Width="420" Height="3" Foreground="#7FF5B7" IsIndeterminate="True" Visibility="{Binding IsRunning,Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        <TextBlock Text="{Binding Status}" Foreground="#B4CDB6" FontSize="12" TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,0"/>
+       </StackPanel>
+      </Grid>
+     </Border>
+     <!-- First-run preview: measured, nothing changed yet. -->
+     <Border CornerRadius="16" Background="#C0061109" Visibility="{Binding IsPreviewOpen,Converter={StaticResource BooleanToVisibilityConverter}}">
+     <Border Style="{StaticResource Card}" Background="#0E241C" Margin="150,30" Padding="26,18">
+      <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6"/></Border.Effect>
+      <DockPanel>
+       <StackPanel DockPanel.Dock="Top"><TextBlock Text="Vista previa" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="Esto es lo que se limpiará. Todavía no se ha modificado nada." Foreground="#AFC5AE" FontSize="12" Margin="0,3,0,12"/></StackPanel>
+       <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+        <Button Content="Cancelar" Command="{Binding ClosePreviewCommand}" Style="{StaticResource QuietButton}" Padding="18,9" Margin="0,0,12,0"/>
+        <Button Command="{Binding ConfirmPreviewCommand}" Style="{StaticResource QuietButton}" Background="#79F3B8" BorderBrush="#C0FFDC" Padding="22,9"><TextBlock Text="Limpiar ahora" Foreground="#0B3020" FontWeight="SemiBold" FontSize="15"/></Button>
+       </StackPanel>
+       <TextBlock DockPanel.Dock="Bottom" Text="{Binding PreviewTotal}" FontSize="12" Foreground="#CFE3CF" TextWrapping="Wrap" Margin="0,8,0,0"/>
+       <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ItemsControl ItemsSource="{Binding PreviewRows}"><ItemsControl.ItemTemplate><DataTemplate>
+         <Border BorderBrush="#2E4A3C" BorderThickness="0,0,0,1" Padding="0,7"><DockPanel><TextBlock Text="{Binding Name}" FontWeight="SemiBold" Width="190"/><TextBlock Text="{Binding Text}" Foreground="#BFD6C1" TextWrapping="Wrap"/></DockPanel></Border>
+        </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+       </ScrollViewer>
+      </DockPanel>
+     </Border>
+     </Border>
+     <!-- Options and the last report. -->
+     <Border x:Name="CleanDetailsPanel" Style="{StaticResource Card}" Background="#0E241C" Margin="0" Padding="24,16" Visibility="Collapsed">
+      <Grid><Grid.RowDefinitions><RowDefinition Height="42"/><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+       <TextBlock Text="Opciones y detalles" FontSize="23" FontWeight="SemiBold"/>
+       <Button Content="Volver  ✕" Click="OnCleanDetailsClose" Style="{StaticResource QuietButton}" HorizontalAlignment="Right" Padding="12,5" VerticalAlignment="Top"/>
+       <StackPanel Grid.Row="1" Margin="0,0,0,10">
+        <WrapPanel>
+         <CheckBox Content="Mostrar vista previa antes de limpiar" IsChecked="{Binding AlwaysPreview,Mode=TwoWay}" Margin="0,0,24,0" VerticalAlignment="Center"/>
+         <Button Content="Abrir carpeta de informes" Command="{Binding OpenReportsCommand}" Style="{StaticResource QuietButton}" Padding="12,5" Margin="0,0,10,0"/>
+         <Button Content="Deshacer último cambio del registro" Command="{Binding UndoRegistryCommand}" Style="{StaticResource QuietButton}" Padding="12,5"/>
+        </WrapPanel>
+        <TextBlock Foreground="#AFC5AE" FontSize="11.5" TextWrapping="Wrap" Margin="0,10,0,0" Text="Reglas: se conservan los archivos en uso y los de menos de 48 h (7 días para volcados); nunca se siguen enlaces ni uniones. Las cachés de cada navegador solo se limpian con él cerrado. También en limpieza extrema se conserva el historial de navegación, las cookies, las contraseñas, los marcadores y las sesiones. Temporales incluye los accesos rotos del escritorio e Inicio, que van a la papelera. El registro se exporta antes de cada cambio. Se retiran los registros de USB desconectados sin esperar días, horas ni minutos, también si no tienen fecha. Se comprueba de nuevo su estado antes de retirarlos y se conservan sus controladores."/>
+       </StackPanel>
+       <Border Grid.Row="2" CornerRadius="8" Background="#0A1A14" BorderBrush="#2E4A3C" BorderThickness="1" Padding="12,8">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+         <TextBlock FontFamily="Consolas" FontSize="11.5" Foreground="#CFE3CF">
+          <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding Report}"/><Style.Triggers><DataTrigger Binding="{Binding HasReport}" Value="False"><Setter Property="Text" Value="Aún no hay informe en esta sesión."/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+         </TextBlock>
+        </ScrollViewer>
+       </Border>
+      </Grid>
+     </Border>
+    </Grid>
+   </Grid>
+   <Border x:Name="AdvancedPanel" Style="{StaticResource Card}" Margin="56,100,56,60" Padding="24,16" Visibility="{Binding IsChecked,ElementName=AdvancedToggle,Converter={StaticResource BooleanToVisibilityConverter}}">
+    <Grid><Grid.RowDefinitions><RowDefinition Height="42"/><RowDefinition/></Grid.RowDefinitions><TextBlock Text="Opciones avanzadas" FontSize="23" FontWeight="SemiBold"/><Button Content="Volver  ✕" Click="OnAdvancedClose" Style="{StaticResource QuietButton}" HorizontalAlignment="Right" Padding="12,5" VerticalAlignment="Top"/>
+     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,8,0,0">
+      <StackPanel Margin="0,0,12,0">
+       <TextBlock Text="Áreas de limpieza" FontWeight="SemiBold"/><TextBlock Text="Vaciar más áreas no garantiza mayor rendimiento." Foreground="#AFC5AE" FontSize="12" Margin="0,4,0,12"/>
+       <ItemsControl ItemsSource="{Binding MemoryAreaItems}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><CheckBox Content="{Binding Name}" IsChecked="{Binding Value,Mode=TwoWay}" IsEnabled="{Binding IsEnabled}" Margin="0,3,8,3"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+       <TextBlock Text="Procesos excluidos" FontWeight="SemiBold" Margin="0,18,0,8"/>
+       <ScrollViewer x:Name="ProcessExclusionScrollViewer" MaxHeight="85" VerticalScrollBarVisibility="Auto"><ItemsControl x:Name="ProcessExclusionList" ItemsSource="{Binding ProcessExclusionList}"><ItemsControl.ItemTemplate><DataTemplate><DockPanel><Button DockPanel.Dock="Right" Content="Quitar" Command="{Binding DataContext.RemoveProcessFromExclusionListCommand,RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" Style="{StaticResource QuietButton}" Padding="8,3"/><TextBlock Text="{Binding}" VerticalAlignment="Center"/></DockPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+       <DockPanel Margin="0,5,0,12"><Button DockPanel.Dock="Right" Content="Añadir" Style="{StaticResource QuietButton}" Command="{Binding AddProcessToExclusionListCommand}" CommandParameter="{Binding ElementName=Processes,Path=Text}" Margin="10,0,0,0"/><ComboBox x:Name="Processes" ItemsSource="{Binding Processes}" SelectedValue="{Binding SelectedProcess}" IsEditable="True" DropDownOpened="OnProcessesDropDownOpened"/></DockPanel>
+       <StackPanel Orientation="Horizontal"><CheckBox Content="Iniciar minimizado" IsChecked="{Binding StartMinimized}" Margin="0,0,28,0"/><CheckBox Content="Activar atajo de limpieza" IsChecked="{Binding UseHotkey}"/></StackPanel>
+       <Button Content="Salir de ARCA" Click="OnExitButtonClick" HorizontalAlignment="Left" Margin="0,14,0,0" Style="{StaticResource QuietButton}" Padding="12,5"/>
+      </StackPanel>
+     </ScrollViewer>
+    </Grid>
+   </Border>
+  </Grid>
+ </Viewbox>
+</local:View>
+
+
+
+
+
+

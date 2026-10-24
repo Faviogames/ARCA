@@ -1,0 +1,162 @@
+﻿<Window x:Class="WinMemoryCleaner.FloatingBubbleWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ARCA"
+        Width="72"
+        Height="72"
+        AllowsTransparency="True"
+        AutomationProperties.Name="{Binding Description}"
+        Background="Transparent"
+        Focusable="False"
+        ResizeMode="NoResize"
+        ShowActivated="False"
+        ShowInTaskbar="False"
+        ToolTip="{Binding Description}"
+        Topmost="False"
+        WindowStyle="None">
+    <!-- ARCA: floating bubble (visual design: assets/ram-cleaned.svg) -->
+    <Window.ContextMenu>
+        <ContextMenu>
+            <MenuItem Click="OnOpenMenuItemClick" Header="{Binding OpenText}" />
+            <MenuItem Click="OnHideMenuItemClick" Header="{Binding HideText}" />
+            <Separator />
+            <MenuItem Click="OnExitMenuItemClick" Header="{Binding ExitText}" />
+        </ContextMenu>
+    </Window.ContextMenu>
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="Accent" Color="#9AEBBD" />
+        <SolidColorBrush x:Key="ChipSlot" Color="#173426" />
+
+        <Storyboard x:Key="SpinStoryboard">
+            <DoubleAnimation RepeatBehavior="Forever"
+                             Storyboard.TargetName="SpinnerRotation"
+                             Storyboard.TargetProperty="Angle"
+                             From="0"
+                             To="360"
+                             Duration="0:0:1.8" />
+        </Storyboard>
+    </Window.Resources>
+
+    <Grid Cursor="Hand">
+        <!-- Body -->
+        <Ellipse Stroke="#34515B" StrokeThickness="1">
+            <Ellipse.Fill>
+                <LinearGradientBrush StartPoint="0.15,0.05" EndPoint="0.85,0.95">
+                    <GradientStop Offset="0" Color="#20362A" />
+                    <GradientStop Offset="1" Color="#141C19" />
+                </LinearGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+
+        <!-- Turquoise contour (Ready / Completed) -->
+        <Ellipse x:Name="Contour"
+                 Margin="4"
+                 Stroke="#7CF0CF"
+                 StrokeThickness="1.5">
+            <Ellipse.Style>
+                <Style TargetType="Ellipse">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding State}" Value="Cleaning">
+                            <Setter Property="Opacity" Value="0.25" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding State}" Value="Error">
+                            <Setter Property="Stroke" Value="#F5B942" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Ellipse.Style>
+        </Ellipse>
+
+        <!-- Indeterminate progress ring (Cleaning): no invented percentage -->
+        <Ellipse x:Name="Spinner"
+                 Margin="4"
+                 RenderTransformOrigin="0.5,0.5"
+                 Stroke="#8AF5DE"
+                 StrokeDashArray="7 30"
+                 StrokeDashCap="Round"
+                 StrokeThickness="3"
+                 Visibility="Collapsed">
+            <Ellipse.RenderTransform>
+                <RotateTransform x:Name="SpinnerRotation" />
+            </Ellipse.RenderTransform>
+        </Ellipse>
+
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <!-- RAM chip -->
+            <Viewbox Width="32" Height="22">
+                <Canvas Width="100" Height="70">
+                    <Rectangle Canvas.Left="6"
+                               Canvas.Top="12"
+                               Width="88"
+                               Height="40"
+                               Fill="{StaticResource Accent}"
+                               RadiusX="7"
+                               RadiusY="7" />
+                    <Path Data="M16 52v10m14-10v10m14-10v10m14-10v10m14-10v10m14-10v10"
+                          Stroke="{StaticResource Accent}"
+                          StrokeThickness="5" />
+                    <Path Data="M17 22h16v20H17zm24 0h16v20H41zm24 0h16v20H65z" Fill="{StaticResource ChipSlot}" />
+                </Canvas>
+            </Viewbox>
+
+            <!-- Used RAM percentage -->
+            <TextBlock HorizontalAlignment="Center"
+                       FontSize="14"
+                       FontWeight="SemiBold"
+                       Foreground="#A2F6DD"
+                       Text="{Binding UsedPercentageText}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding State}" Value="Cleaning">
+                                <Setter Property="Visibility" Value="Hidden" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </StackPanel>
+
+        <!-- Completed badge -->
+        <Grid x:Name="CompletedBadge"
+              Width="22"
+              Height="22"
+              Margin="0,0,1,1"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Bottom"
+              Visibility="Collapsed">
+            <Ellipse Fill="#91F5B7"
+                     Stroke="#101E26"
+                     StrokeThickness="2" />
+            <Path Margin="5,6,5,5"
+                  Data="M0 5 L4 9 L12 0"
+                  Stretch="Uniform"
+                  Stroke="#123D2A"
+                  StrokeEndLineCap="Round"
+                  StrokeLineJoin="Round"
+                  StrokeStartLineCap="Round"
+                  StrokeThickness="2.5" />
+        </Grid>
+
+        <!-- Error badge -->
+        <Grid x:Name="ErrorBadge"
+              Width="22"
+              Height="22"
+              Margin="0,0,1,1"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Bottom"
+              Visibility="Collapsed">
+            <Ellipse Fill="#F5B942"
+                     Stroke="#101E26"
+                     StrokeThickness="2" />
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="13"
+                       FontWeight="Bold"
+                       Foreground="#3A2600"
+                       Text="!" />
+        </Grid>
+    </Grid>
+</Window>
+

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RamPrototype: enables building the legacy WPF project with the .NET SDK MSBuild
+  (no Visual Studio). Injected via CustomAfterMicrosoftCommonTargets by build\build.ps1.
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- packages.config project: there are no PackageReference outputs to forward to the temp XAML project -->
+    <IncludePackageReferencesDuringMarkupCompilation>false</IncludePackageReferencesDuringMarkupCompilation>
+  </PropertyGroup>
+  <Import Project="$(MSBuildSDKsPath)\Microsoft.NET.Sdk.WindowsDesktop\targets\Microsoft.WinFX.targets" />
+  <ItemGroup>
+    <!-- Transitive dependency of System.Web.Extensions required by the XAML markup compiler -->
+    <Reference Include="System.Web" />
+  </ItemGroup>
+</Project>
