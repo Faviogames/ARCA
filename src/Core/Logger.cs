@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32.SafeHandles;
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -36,7 +36,7 @@ namespace WinMemoryCleaner
                 Trace.Listeners.AddRange(new TraceListener[]
                 {
                     new ConsoleTraceListener(false) { Name = Constants.App.Title },
-                    new EventLogTraceListener(Constants.App.Title)
+                    new DefaultTraceListener() { Name = Constants.App.Title }
                 });
             }
             catch

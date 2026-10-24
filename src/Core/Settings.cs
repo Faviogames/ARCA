@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -102,13 +102,28 @@ namespace WinMemoryCleaner
 
         #region Methods
 
+        internal const string UserSettingsPath = @"Software\ARCA";
+
+        private static RegistryKey OpenUserSettings(bool exclusions)
+        {
+            var current = Registry.CurrentUser.OpenSubKey(UserSettingsPath);
+            if (current != null)
+            {
+                if (!exclusions) return current;
+                current.Dispose();
+                return Registry.CurrentUser.OpenSubKey(UserSettingsPath + @"\ProcessExclusionList");
+            }
+            // Import the former machine-wide settings read-only on the first 1.0 launch.
+            return Registry.LocalMachine.OpenSubKey(exclusions ? Constants.App.Registry.Key.ProcessExclusionList : Constants.App.Registry.Key.Settings);
+        }
+
         private static void Load(bool loadUserValues = true)
         {
             // Default values
             AlwaysOnTop = false;
             AutoOptimizationInterval = 0;
             AutoOptimizationMemoryUsage = 0;
-            AutoUpdate = true;
+            AutoUpdate = false;
             CloseAfterOptimization = false;
             CloseToTheNotificationArea = false;
             CompactMode = false;
@@ -148,7 +163,7 @@ namespace WinMemoryCleaner
                     return;
 
                 // Process Exclusion List
-                using (var key = Registry.LocalMachine.OpenSubKey(Constants.App.Registry.Key.ProcessExclusionList))
+                using (var key = OpenUserSettings(true))
                 {
                     if (key != null)
                     {
@@ -158,7 +173,7 @@ namespace WinMemoryCleaner
                 }
 
                 // Settings
-                using (var key = Registry.LocalMachine.OpenSubKey(Constants.App.Registry.Key.Settings))
+                using (var key = OpenUserSettings(false))
                 {
                     if (key != null)
                     {
@@ -166,7 +181,7 @@ namespace WinMemoryCleaner
                         // RamPrototype is manual-only; do not import legacy schedules.
                         AutoOptimizationInterval = 0;
                         AutoOptimizationMemoryUsage = 0;
-                        AutoUpdate = Convert.ToBoolean(key.GetValue(Helper.NameOf(() => AutoUpdate), AutoUpdate), _culture);
+                        AutoUpdate = false; // ARCA releases are installed manually.
                         CloseAfterOptimization = Convert.ToBoolean(key.GetValue(Helper.NameOf(() => CloseAfterOptimization), CloseAfterOptimization), _culture);
                         CloseToTheNotificationArea = Convert.ToBoolean(key.GetValue(Helper.NameOf(() => CloseToTheNotificationArea), CloseToTheNotificationArea), _culture);
                         CompactMode = Convert.ToBoolean(key.GetValue(Helper.NameOf(() => CompactMode), CompactMode), _culture);
@@ -264,11 +279,11 @@ namespace WinMemoryCleaner
             try
             {
                 // Process Exclusion List
-                Registry.LocalMachine.DeleteSubKey(Constants.App.Registry.Key.ProcessExclusionList, false);
+                Registry.CurrentUser.DeleteSubKey(UserSettingsPath + @"\ProcessExclusionList", false);
 
                 if (ProcessExclusionList.Any())
                 {
-                    using (var key = Registry.LocalMachine.CreateSubKey(Constants.App.Registry.Key.ProcessExclusionList))
+                    using (var key = Registry.CurrentUser.CreateSubKey(UserSettingsPath + @"\ProcessExclusionList"))
                     {
                         if (key != null)
                         {
@@ -279,7 +294,7 @@ namespace WinMemoryCleaner
                 }
 
                 // Settings
-                using (var key = Registry.LocalMachine.CreateSubKey(Constants.App.Registry.Key.Settings))
+                using (var key = Registry.CurrentUser.CreateSubKey(UserSettingsPath))
                 {
                     if (key != null)
                     {

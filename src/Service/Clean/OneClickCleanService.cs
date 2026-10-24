@@ -50,6 +50,12 @@ namespace WinMemoryCleaner
         /// </summary>
         public static IList<CleanTaskResult> Run(CleanCategory selected, bool apply, Action<CleanCategory, CleanTaskState, CleanTaskResult> progress, CancellationToken token)
         {
+            if (!ElevatedOperations.IsAdministrator && ElevatedOperations.NeedsElevation(selected, apply))
+            {
+                if (Interlocked.CompareExchange(ref _running, 1, 0) != 0) return null;
+                try { return ElevatedOperations.Clean(selected, progress, token); }
+                finally { Interlocked.Exchange(ref _running, 0); }
+            }
             return Run(Order.Where(c => (selected & c) != 0).Select(c => Create(c)).ToList(), apply, progress, token);
         }
 
@@ -134,7 +140,7 @@ namespace WinMemoryCleaner
             }
         }
 
-        private static void WriteReport(IList<CleanTaskResult> results)
+        internal static void WriteReport(IList<CleanTaskResult> results)
         {
             try
             {

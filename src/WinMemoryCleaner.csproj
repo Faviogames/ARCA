@@ -166,6 +166,9 @@
     <Compile Include="Model\OperatingSystem.cs" />
     <Compile Include="Model\Theme.cs" />
     <Compile Include="Service\ComputerService.cs" />
+    <Compile Include="Service\ElevatedOperations.cs" />
+    <Compile Include="Service\UserStartupService.cs" />
+    <Compile Include="Test\PermissionTests.cs" />
     <Compile Include="Service\BrowserCloseService.cs" />
     <Compile Include="Service\Clean\CleanModel.cs" />
     <Compile Include="Service\Clean\ExtremeTask.cs" />

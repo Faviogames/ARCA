@@ -1,6 +1,19 @@
 ﻿# Cambios de ARCA
 
-## 4.4 — 24 de octubre de 2026
+## 1.0 — 25 de octubre de 2026
+
+Primera versión de lanzamiento. La numeración 4.x correspondía a prototipos internos.
+
+- Interfaz y burbuja sin administrador; autorización al limpiar mediante un auxiliar temporal.
+- Inicio con Windows por acceso directo del usuario; sin limpieza automática.
+- Preferencias en HKCU, con importación de la configuración anterior en lectura.
+- Ayudas revisadas: cachés resumida, USB con una frase y papelera sin tooltip.
+- Cancelar UAC no limpia ni cierra navegadores.
+- 128 pruebas focalizadas y paquetes portable/código fuente con SHA-256.
+
+## Prototipos internos
+
+### 4.4 — 24 de octubre de 2026
 
 - Retirados el módulo experimental de historial, las referencias SQLite y sus pruebas específicas.
 - Historial, cookies, contraseñas, marcadores y sesiones se conservan también en extrema.

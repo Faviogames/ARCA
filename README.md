@@ -8,9 +8,15 @@ Basada en [Windows Memory Cleaner](https://github.com/IgorMundstein/WinMemoryCle
 
 ## Descargar y ejecutar
 
-Descarga el portable desde [Releases](https://github.com/Faviogames/ARCA/releases), extráelo y abre `ARCA.exe`. Conserva `nunit.framework.dll` junto al ejecutable: el proyecto heredado incluye sus pruebas en el ensamblado. Se requieren permisos de administrador. Cierra la versión anterior desde la bandeja antes de abrir una nueva.
+Descarga el portable desde [Releases](https://github.com/Faviogames/ARCA/releases/tag/v1.0), extráelo y abre `ARCA.exe`. Conserva `nunit.framework.dll` junto al ejecutable: el proyecto heredado incluye sus pruebas en el ensamblado. Cierra la versión anterior desde la bandeja antes de abrir una nueva.
 
-Entrega local: `releases/ARCA-v4.4-portable.zip` y `releases/ARCA-v4.4-source.zip`. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
+Entrega local: `releases/ARCA-v1.0-portable.zip` y `releases/ARCA-v1.0-source.zip`. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
+
+ARCA abre sin pedir administrador. La limpieza completa de RAM, los temporales del sistema, el registro, USB y Extrema solicitan autorización de Windows al ejecutarse. Un auxiliar de la misma aplicación realiza la operación y termina; no se instala ningún servicio. Cancelar el aviso cancela esa operación. Las cachés del usuario y la papelera pueden limpiarse sin elevar la app.
+
+La autorización debe hacerse con la misma cuenta de Windows que abrió ARCA; no se admite usar las credenciales de otra cuenta para limpiar su perfil. Si la app se abre manualmente como administrador, mantiene esos permisos durante esa sesión.
+
+En **Memoria RAM → Opciones avanzadas**, activa **Iniciar con Windows** para crear un acceso directo en la carpeta Inicio de tu usuario. **Iniciar minimizado** es independiente. Arrancar ARCA no ejecuta ninguna limpieza. Conserva el portable en una ubicación estable; si lo mueves, desactiva y vuelve a activar esta opción desde la nueva ubicación.
 
 ## Funciones
 
@@ -27,9 +33,11 @@ Se recuerdan las categorías. La primera ejecución ofrece vista previa; despué
 
 La casilla opcional «Cerrar navegadores» pertenece a la limpieza de RAM y fuerza su cierre cuando se solicita esa limpieza; puede perderse trabajo sin guardar. El mantenimiento de cachés omite los navegadores abiertos.
 
-## Versión 4.4
+## Versión 1.0
 
-Se retiró completamente el módulo experimental de historial de 4.3: ya no se distribuye código SQLite de acceso a perfiles. Se mantienen los iconos de 256 px, los textos simplificados y el botón «Limpiar PC».
+Primera versión de lanzamiento de ARCA. Los números 4.x identificaban prototipos internos. Incluye inicio con Windows por usuario, permisos solicitados al limpiar y ayudas breves por categoría. Conserva el diseño de RAM, la burbuja circular, los iconos de 256 px y el botón «Limpiar PC».
+
+Se retiró completamente el módulo experimental de historial del prototipo 4.3: ya no se distribuye código SQLite de acceso a perfiles.
 
 La 4.3 recibió una detección heurística genérica de Malwarebytes cuya causa no se confirmó. Retirar el módulo no garantiza que otros antivirus dejen de detectar el ejecutable. ARCA todavía no tiene firma Authenticode; no desactives la protección para instalarla.
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -917,12 +917,19 @@ namespace WinMemoryCleaner
                 {
                     IsBusy = true;
 
+                    if (Settings.RunOnStartup == value) return;
                     App.RunOnStartup(value);
 
                     Settings.RunOnStartup = value;
                     Settings.Save();
 
                     RaisePropertyChanged();
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e);
+                    RaisePropertyChanged(() => RunOnStartup);
+                    System.Windows.MessageBox.Show("No se pudo cambiar el inicio con Windows: " + e.Message, "ARCA", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 }
                 finally
                 {
@@ -1778,20 +1785,15 @@ namespace WinMemoryCleaner
 
                     physicalFreeBefore = _computerService.Memory.Physical.Free.Bytes;
 
-                    _browserCloseResult = BrowserCloseService.CloseIfRequested(closeBrowsers, BrowserCloseService.ForceCloseCurrentSession);
-                    RaisePropertyChanged(() => BrowserCloseSummary);
-
-                    try
+                    if (ElevatedOperations.IsAdministrator)
                     {
+                        _browserCloseResult = BrowserCloseService.CloseIfRequested(closeBrowsers, BrowserCloseService.ForceCloseCurrentSession);
                         _computerService.Optimize(reason, Settings.MemoryAreas);
-
                         succeeded = _computerService.LastOptimizationErrorCount == 0 && (_browserCloseResult == null || _browserCloseResult.Failed == 0);
                     }
-                    catch (Exception e)
-                    {
-                        Logger.Error(e);
-                    }
-
+                    else
+                        succeeded = ElevatedOperations.Optimize(Settings.MemoryAreas, closeBrowsers, OnOptimizeProgressUpdate, out _browserCloseResult);
+                    RaisePropertyChanged(() => BrowserCloseSummary);
                     // Update memory info
                     Computer.Memory = _computerService.Memory;
                     RaisePropertyChanged(() => Computer);
@@ -1803,7 +1805,7 @@ namespace WinMemoryCleaner
                     var mayNotify = Settings.ShowOptimizationNotifications && application != null &&
                         (bool)application.Dispatcher.Invoke((Func<bool>)(() => application.MainWindow != null && application.MainWindow.IsActive));
 
-                    if (mayNotify)
+                    if (mayNotify && succeeded)
                     {
                         var physicalReleased = (Computer.Memory.Physical.Free.Bytes > tempPhysicalAvailable ? Computer.Memory.Physical.Free.Bytes - tempPhysicalAvailable : tempPhysicalAvailable - Computer.Memory.Physical.Free.Bytes).ToMemoryUnit();
                         var virtualReleased = (Computer.Memory.Virtual.Free.Bytes > tempVirtualAvailable ? Computer.Memory.Virtual.Free.Bytes - tempVirtualAvailable : tempVirtualAvailable - Computer.Memory.Virtual.Free.Bytes).ToMemoryUnit();
@@ -1814,6 +1816,15 @@ namespace WinMemoryCleaner
 
                         Notify(message);
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    OptimizationProgressStep = "Limpieza cancelada · permiso no concedido";
+                }
+                catch (Exception e)
+                {
+                    OptimizationProgressStep = "No se pudo completar la limpieza";
+                    Logger.Error(e);
                 }
                 finally
                 {

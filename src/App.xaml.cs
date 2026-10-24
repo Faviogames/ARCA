@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -183,9 +183,7 @@ namespace WinMemoryCleaner
             _mutex = new Mutex(true, Constants.App.Id, out createdNew);
             _isRunning = !createdNew;
 
-            // App Migration
-            if (!_isRunning)
-                Migrator.Run();
+            // ARCA uses per-user settings; legacy machine-wide migrations are not run.
 
             // App priority
             SetPriority(Settings.RunOnPriority);
@@ -372,7 +370,13 @@ namespace WinMemoryCleaner
 
             try
             {
+                if (ElevatedOperations.TryRunWorker(startupEvent == null ? null : startupEvent.Args))
+                {
+                    Shutdown();
+                    return;
+                }
                 Initialize();
+                Settings.RunOnStartup = UserStartupService.IsEnabled;
 
                 var commandLineArguments = startupEvent != null ? startupEvent.Args.Select(arg => arg.Replace("-", "/").Trim()).ToArray() : null;
                 var memoryAreas = Enums.Memory.Areas.None;
@@ -479,7 +483,7 @@ namespace WinMemoryCleaner
                             DependencyInjection.Container.Resolve<INotificationService>().Notify(notification);
                         }
 
-                        RunOnStartup(Settings.RunOnStartup);
+                        // Startup shortcut changes only when the user toggles the option.
                         ReleaseMemory();
                         break;
 
@@ -540,7 +544,13 @@ namespace WinMemoryCleaner
                         break;
 
                     case Enums.StartupType.Silent:
-                        DependencyInjection.Container.Resolve<IComputerService>().Optimize(Enums.Memory.Optimization.Reason.Manual, memoryAreas);
+                        if (ElevatedOperations.IsAdministrator)
+                            DependencyInjection.Container.Resolve<IComputerService>().Optimize(Enums.Memory.Optimization.Reason.Manual, memoryAreas);
+                        else
+                        {
+                            BrowserCloseResult ignored;
+                            ElevatedOperations.Optimize(memoryAreas, false, null, out ignored);
+                        }
 
                         Shutdown();
                         break;
@@ -767,146 +777,8 @@ namespace WinMemoryCleaner
         /// <param name="enable">if set to <c>true</c> [enable].</param>
         public static void RunOnStartup(bool enable)
         {
-            try
-            {
-                if (enable)
-                {
-                    var isTaskCreated = false;
-
-                    try
-                    {
-                        var taskXml = string.Format
-                            (
-                                CultureInfo.InvariantCulture,
-                                @"<?xml version=""1.0"" encoding=""UTF-16""?>
-                                <Task version=""1.2""
-	                                xmlns=""http://schemas.microsoft.com/windows/2004/02/mit/task"">
-	                                <RegistrationInfo>
-		                                <Author>{3}</Author>
-		                                <Description>Runs {0} at logon.</Description>
-		                                <Date>{4}</Date>
-	                                </RegistrationInfo>
-	                                <Triggers>
-		                                <LogonTrigger>
-			                                <Enabled>true</Enabled>
-		                                </LogonTrigger>
-	                                </Triggers>
-	                                <Principals>
-		                                <Principal id=""Author"">
-			                                <UserId>{2}</UserId>
-			                                <LogonType>InteractiveToken</LogonType>
-			                                <RunLevel>HighestAvailable</RunLevel>
-		                                </Principal>
-	                                </Principals>
-	                                <Settings>
-		                                <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
-		                                <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
-		                                <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
-		                                <AllowHardTerminate>true</AllowHardTerminate>
-		                                <StartWhenAvailable>true</StartWhenAvailable>
-		                                <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
-		                                <IdleSettings>
-			                                <WaitTimeout>PT10M</WaitTimeout>
-			                                <StopOnIdleEnd>false</StopOnIdleEnd>
-			                                <RestartOnIdle>false</RestartOnIdle>
-		                                </IdleSettings>
-		                                <AllowStartOnDemand>true</AllowStartOnDemand>
-		                                <Enabled>true</Enabled>
-		                                <Hidden>false</Hidden>
-		                                <RunOnlyIfIdle>false</RunOnlyIfIdle>
-		                                <WakeToRun>false</WakeToRun>
-		                                <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
-		                                <Priority>7</Priority>
-	                                </Settings>
-	                                <Actions Context=""Author"">
-		                                <Exec>
-			                                <Command>""{1}""</Command>
-		                                </Exec>
-	                                </Actions>
-                                </Task>",
-                                Constants.App.Title,
-                                Path,
-                                WindowsIdentity.GetCurrent().User.Value,
-                                string.Format(CultureInfo.InvariantCulture, "WMC {0} ({1})", string.Format(Localizer.Culture, Constants.App.VersionFormat, Version.Major, Version.Minor, Version.Build), Environment.UserName),
-                                DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)
-                            );
-
-                                var tempXmlFile = System.IO.Path.GetTempFileName();
-
-                        File.WriteAllText(tempXmlFile, taskXml);
-
-                        var createStartInfo = new ProcessStartInfo("schtasks")
-                        {
-                            Arguments = string.Format(CultureInfo.InvariantCulture, @"/CREATE /F /TN ""{0}"" /XML ""{1}""", Constants.App.Title, tempXmlFile),
-                            CreateNoWindow = true,
-                            UseShellExecute = false,
-                            WindowStyle = ProcessWindowStyle.Hidden,
-                            RedirectStandardError = true
-                        };
-
-                        using (var createProcess = Process.Start(createStartInfo))
-                        {
-                            var errorMessage = createProcess.StandardError.ReadToEnd();
-                            createProcess.WaitForExit();
-
-                            if (createProcess.ExitCode == Constants.Windows.SystemErrorCode.ErrorSuccess)
-                                isTaskCreated = true;
-                            else
-                                Logger.Error(string.Format(Localizer.Culture, "XML task creation failed (will attempt fallback). Error: {0}", errorMessage));
-                        }
-
-                        Helper.DeleteFile(tempXmlFile);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(string.Format(Localizer.Culture, "An exception occurred during XML task creation (will attempt fallback): {0}", ex.GetMessage()));
-                    }
-
-                    if (!isTaskCreated)
-                    {
-                        Logger.Information("Attempting basic fallback method to create startup task.");
-
-                        var createStartInfo = new ProcessStartInfo("schtasks")
-                        {
-                            Arguments = string.Format(CultureInfo.InvariantCulture, @"/CREATE /F /SC ONLOGON /TN ""{0}"" /TR ""{1}"" /RU ""{2}""", Constants.App.Title, Path, Environment.UserName),
-                            CreateNoWindow = true,
-                            UseShellExecute = false,
-                            WindowStyle = ProcessWindowStyle.Hidden,
-                            RedirectStandardError = true
-                        };
-
-                        using (var createProcess = Process.Start(createStartInfo))
-                        {
-                            var errorMessage = createProcess.StandardError.ReadToEnd();
-                            createProcess.WaitForExit();
-
-                            if (createProcess.ExitCode != Constants.Windows.SystemErrorCode.ErrorSuccess)
-                                Logger.Error(string.Format(Localizer.Culture, "Fallback task creation also failed for '{0}'. Error: {1}", Constants.App.Title, errorMessage));
-                        }
-                    }
-                }
-                else
-                {
-                    var deleteStartInfo = new ProcessStartInfo("schtasks")
-                    {
-                        Arguments = string.Format(CultureInfo.InvariantCulture, @"/DELETE /F /TN ""{0}""", Constants.App.Title),
-                        CreateNoWindow = true,
-                        UseShellExecute = false,
-                        WindowStyle = ProcessWindowStyle.Hidden
-                    };
-
-                    using (var deleteProcess = Process.Start(deleteStartInfo))
-                    {
-                        deleteProcess.WaitForExit();
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Error(string.Format(Localizer.Culture, "An error occurred while managing the scheduled task for app startup. Error: {0}", e.GetMessage()));
-            }
+            UserStartupService.SetEnabled(enable);
         }
-
         /// <summary>
         /// Sets the app priority for the Windows
         /// </summary>

@@ -1,16 +1,21 @@
-# Validación local de ARCA 4.4
+﻿# Validación de ARCA 1.0
 
-24 de octubre de 2026.
+25 de octubre de 2026.
 
-- Compilación Release correcta mediante `build/build.ps1 -SkipRestore` y .NET SDK 10. Persiste la advertencia heredada MSB3884 por un conjunto de reglas ausente.
-- **108 pruebas focalizadas**, 0 errores y 0 fallos. Se ejecutan con `build/test.ps1`.
-- Cubren mantenimiento, agrupación de temporales y accesos directos, USB con retirada simulada, top 3 de memoria, cierre simulado de navegadores y clasificación/estados/ciclo de vida de la burbuja.
-- Render WPF real de la pantalla `1 clic clean` y de la burbuja, sin solicitar limpieza ni cierre de aplicaciones.
-- Retirados `BrowserHistoryTask.cs`, sus pruebas, contadores y referencias del proyecto. La compilación actual no tiene llamadas a `winsqlite3.dll` ni código para borrar historial.
-- Los iconos incluidos tienen 256 × 256 píxeles y transparencia.
+- Compilación Release correcta con .NET SDK 10. Persiste MSB3884 por el archivo heredado AllRules.ruleset ausente.
+- 128 pruebas focalizadas, 0 errores y 0 fallos (build/test.ps1).
+- Las 20 pruebas nuevas cubren selección de operaciones elevadas, rechazo de bits desconocidos, conservación de resultados, argumentos inválidos y creación/eliminación de un acceso directo en una carpeta temporal. No modifican la carpeta Inicio real.
+- Las anteriores cubren mantenimiento con datos de ensayo, USB simulado, top 3, cierre simulado de navegadores y estados/ciclo de vida de la burbuja.
+- Render WPF real de 1 clic clean, opciones avanzadas y burbuja, sin ejecutar limpiezas.
+- Manifiesto asInvoker. El auxiliar usa runas, una conexión de un solo uso con identificador aleatorio, ACL por usuario/administradores y comprobación de los procesos de ambos extremos. Solo acepta operaciones fijas de ARCA, sin comandos ni rutas de borrado arbitrarios.
+- Se rechaza elevar con otra cuenta para evitar limpiar otro perfil. El auxiliar termina después de la operación. La cancelación es cooperativa y Windows Update restaura sus servicios en finally.
+- Preferencias en HKCU\Software\ARCA; importación de las anteriores del equipo en lectura.
+- Sin SQLite ni limpieza de historial; iconos de 256 px con transparencia.
 
-No se ha ejecutado una limpieza real elevada, retirado periféricos del usuario ni certificado la suite heredada completa. Los escenarios de juegos, varios monitores, escritorios virtuales, configuración HKLM, restauración del registro y tareas de Windows Update requieren pruebas en el equipo de destino. Los avisos por no poder guardar configuración/logs desde el sandbox no provocaron fallos en las pruebas.
+Los avisos del sandbox por no poder guardar preferencias o informes no provocaron fallos. La suite heredada completa no está certificada.
 
-Malwarebytes detectó heurísticamente la build experimental 4.3. No se conoce su causa exacta ni se ha confirmado que esta 4.4 deje de detectarse. Las pruebas funcionales no son un análisis antimalware. La aplicación permanece sin firma Authenticode.
+## Comprobaciones manuales pendientes
 
-GitHub Actions está preparado para compilar y ejecutar las mismas pruebas. No se declara CI remoto correcto hasta que el workflow haya terminado en el repositorio publicado.
+No se ha aceptado UAC para ejecutar una limpieza real en el equipo del usuario. Falta verificar el recorrido real: abrir sin elevación, cancelar UAC sin cambios ni cierre de navegadores, aceptar una limpieza y comprobar que termina el auxiliar. También falta probar el inicio tras iniciar sesión, retirada real de USB, restauración del registro, servicios de Windows Update y escenarios con varios monitores/juegos.
+
+La causa de la detección heurística del prototipo 4.3 no se confirmó. ARCA 1.0 sigue sin firma Authenticode; las pruebas funcionales no certifican ausencia de detecciones. No se han desactivado protecciones ni creado exclusiones.
