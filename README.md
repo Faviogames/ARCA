@@ -10,13 +10,15 @@ Basada en [Windows Memory Cleaner](https://github.com/IgorMundstein/WinMemoryCle
 
 Descarga el portable desde [Releases](https://github.com/Faviogames/ARCA/releases/latest), extráelo y abre `ARCA.exe`. Conserva `nunit.framework.dll` junto al ejecutable: el proyecto heredado incluye sus pruebas en el ensamblado. Cierra la versión anterior desde la bandeja antes de abrir una nueva.
 
-Entrega local: `releases/ARCA-v1.0.2-portable.zip` y `releases/ARCA-v1.0.2-source.zip`. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
+Entrega local: `releases/ARCA-v1.0.3-portable.zip` y `releases/ARCA-v1.0.3-source.zip`. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
 
 ARCA abre sin pedir administrador. La limpieza completa de RAM, los temporales del sistema, el registro, los dispositivos desconectados y Extrema solicitan autorización de Windows al ejecutarse. Un auxiliar de la misma aplicación realiza la operación y termina; no se instala ningún servicio. Cancelar el aviso cancela esa operación. Las cachés del usuario y la papelera pueden limpiarse sin elevar la app.
 
 La autorización debe hacerse con la misma cuenta de Windows que abrió ARCA; no se admite usar las credenciales de otra cuenta para limpiar su perfil. Si la app se abre manualmente como administrador, mantiene esos permisos durante esa sesión.
 
-En **Memoria RAM → Opciones avanzadas**, activa **Iniciar con Windows** para crear un acceso directo en la carpeta Inicio de tu usuario. **Iniciar minimizado** es independiente. Arrancar ARCA no ejecuta ninguna limpieza. Conserva el portable en una ubicación estable; si lo mueves, desactiva y vuelve a activar esta opción desde la nueva ubicación.
+En **Memoria RAM → Opciones avanzadas**, activa **Iniciar con Windows** para crear un acceso directo en la carpeta Inicio de tu usuario. Al iniciar sesión ARCA se abre en la bandeja; abrirla a mano siempre muestra la ventana. Arrancar ARCA no ejecuta ninguna limpieza. Conserva el portable en una ubicación estable; si lo mueves, desactiva y vuelve a activar esta opción desde la nueva ubicación.
+
+En la misma sección, **Idioma** cambia la interfaz entre español e inglés al momento y recuerda la elección.
 
 ## Funciones
 
@@ -32,6 +34,14 @@ En **Memoria RAM → Opciones avanzadas**, activa **Iniciar con Windows** para c
 Se recuerdan las categorías. La primera ejecución ofrece vista previa; después puede limpiarse con un clic. Hay cancelación e informes locales; un fallo no detiene las demás tareas.
 
 La casilla opcional «Cerrar navegadores» pertenece a la limpieza de RAM y fuerza su cierre cuando se solicita esa limpieza; puede perderse trabajo sin guardar. El mantenimiento de cachés omite los navegadores abiertos.
+
+## Version 1.0.3 / Versión 1.0.3
+
+Spanish and English are available under **Advanced options → Language**. Download the complete portable ZIP and keep `nunit.framework.dll` beside `ARCA.exe`. Starting with Windows opens ARCA in the tray; opening it manually shows the window. Weekly cleaning is not included yet.
+
+Interfaz en español e inglés con cambio inmediato; ayuda breve en Extrema; inicio con Windows siempre en bandeja; eliminadas las casillas de inicio minimizado y atajo global. La limpieza semanal continúa pendiente en [docs/TODO.md](docs/TODO.md).
+
+[English interface preview](docs/1-clic-clean-en.png)
 
 ## Versión 1.0.2
 

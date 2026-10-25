@@ -17,20 +17,21 @@ namespace WinMemoryCleaner
         private readonly Action _changed;
         private bool _isChecked;
         private CleanTaskState _state;
+        private readonly string _subtitle;
         private string _status;
 
         internal CleanCard(CleanCategory category, string subtitle, string icon, bool isChecked, Action changed)
         {
-            Category = category; Title = CleanText.Name(category); Subtitle = subtitle; Icon = icon;
+            Category = category; _subtitle = subtitle; Icon = icon;
             _isChecked = isChecked; _changed = changed;
         }
 
         /// <summary>Category.</summary>
         public CleanCategory Category { get; private set; }
         /// <summary>Card title.</summary>
-        public string Title { get; private set; }
+        public string Title { get { return CleanText.Name(Category); } }
         /// <summary>Resting description.</summary>
-        public string Subtitle { get; private set; }
+        public string Subtitle { get { return Tr.Get(_subtitle); } }
 
         /// <summary>Contextual help shown when hovering a category.</summary>
         public string Help
@@ -39,10 +40,10 @@ namespace WinMemoryCleaner
             {
                 switch (Category)
                 {
-                    case CleanCategory.Temp: return "Elimina temporales antiguos del usuario y Windows, informes de errores y volcados antiguos. Los accesos directos rotos se envían a la papelera.";
-                    case CleanCategory.Caches: return "Las aplicaciones deben estar cerradas.";
-                    case CleanCategory.Registry: return "Limpia referencias a programas que ya no existen. Guarda un respaldo antes de modificar el registro.";
-                    case CleanCategory.Usb: return "Ideal para solucionar problemas con mandos y periféricos.";
+                    case CleanCategory.Temp: return Tr.Get("Elimina temporales antiguos del usuario y Windows, informes de errores y volcados antiguos. Los accesos directos rotos se envían a la papelera.");
+                    case CleanCategory.Caches: return Tr.Get("Las aplicaciones deben estar cerradas.");
+                    case CleanCategory.Registry: return Tr.Get("Limpia referencias a programas que ya no existen. Guarda un respaldo antes de modificar el registro.");
+                    case CleanCategory.Usb: return Tr.Get("Ideal para solucionar problemas con mandos y periféricos.");
                     case CleanCategory.RecycleBin: return null;
                     default: return Subtitle;
                 }
@@ -87,6 +88,8 @@ namespace WinMemoryCleaner
         /// <summary>Second line: description at rest, progress or result otherwise.</summary>
         public string Line { get { return _state == CleanTaskState.Idle || string.IsNullOrEmpty(_status) ? Subtitle : _status; } }
 
+        internal void Relocalize() { RaisePropertyChanged(string.Empty); }
+
         internal void Show(CleanTaskState state, string status)
         {
             _status = status;
@@ -109,7 +112,7 @@ namespace WinMemoryCleaner
         private readonly Dispatcher _dispatcher;
         private CancellationTokenSource _cancel;
         private bool _isRunning, _isCancelling, _isPreviewOpen, _isAnalyzing;
-        private string _status = "Listo para comenzar", _report, _extremeStatus;
+        private string _status = Tr.Get("Listo para comenzar"), _report, _extremeStatus;
         private CleanTaskState _extremeState;
 
         /// <summary>Creates the section state from the saved preferences.</summary>
@@ -130,9 +133,19 @@ namespace WinMemoryCleaner
             PreviewRows = new ObservableCollection<CleanPreviewRow>();
             StartCommand = new RelayCommand(StartOrCancel, () => !_isCancelling && !_isPreviewOpen && !_isAnalyzing);
             ConfirmPreviewCommand = new RelayCommand(() => { ClosePreview(); Settings.OneClickPreview = false; Save(); RaisePropertyChanged(() => AlwaysPreview); Begin(true); });
-            ClosePreviewCommand = new RelayCommand(() => { ClosePreview(); Status = "Vista previa cerrada · no se modificó nada"; ResetCards(); });
+            ClosePreviewCommand = new RelayCommand(() => { ClosePreview(); Status = Tr.Get("Vista previa cerrada · no se modificó nada"); ResetCards(); });
             OpenReportsCommand = new RelayCommand(OpenReports);
             UndoRegistryCommand = new RelayCommand(UndoRegistry, () => !_isRunning);
+            Localizer.StaticPropertyChanged += (sender, e) => _dispatcher.BeginInvoke((Action)Relocalize);
+        }
+
+        // Texts already shown keep their language until the next run; resting texts switch at once.
+        private void Relocalize()
+        {
+            foreach (var card in Cards) card.Relocalize();
+            RaisePropertyChanged(() => ActiveText);
+            RaisePropertyChanged(() => ButtonText);
+            if (!_isRunning && !_isPreviewOpen) { ResetCards(); Status = Tr.Get("Listo para comenzar"); }
         }
 
         /// <summary>The five category tiles; shortcuts are included in Temp.</summary>
@@ -172,8 +185,8 @@ namespace WinMemoryCleaner
             get
             {
                 var n = Cards.Count(c => c.IsChecked);
-                var text = n == 1 ? "1 categoría activada" : n + " categorías activadas";
-                return Extreme ? text + " + extrema" : text;
+                var text = n == 1 ? Tr.Get("1 categoría activada") : Tr.Format("{0} categorías activadas", n);
+                return Extreme ? text + Tr.Get(" + extrema") : text;
             }
         }
 
@@ -221,7 +234,7 @@ namespace WinMemoryCleaner
         /// <summary>Main button caption.</summary>
         public string ButtonText
         {
-            get { return _isCancelling ? "Cancelando…" : _isRunning ? (_isAnalyzing ? "Analizando…" : "Cancelar") : "Limpiar PC"; }
+            get { return Tr.Get(_isCancelling ? "Cancelando…" : _isRunning ? (_isAnalyzing ? "Analizando…" : "Cancelar") : "Limpiar PC"); }
         }
 
         /// <summary>The preview overlay is visible.</summary>
@@ -264,10 +277,10 @@ namespace WinMemoryCleaner
                 _isCancelling = true;
                 RaisePropertyChanged(() => ButtonText);
                 CommandManager.InvalidateRequerySuggested();
-                Status = "Cancelando · se termina el elemento en curso…";
+                Status = Tr.Get("Cancelando · se termina el elemento en curso…");
                 return;
             }
-            if (Selected == CleanCategory.None) { Status = "Elige al menos una categoría"; return; }
+            if (Selected == CleanCategory.None) { Status = Tr.Get("Elige al menos una categoría"); return; }
             Begin(!Settings.OneClickPreview);
         }
 
@@ -280,7 +293,7 @@ namespace WinMemoryCleaner
             var token = _cancel.Token;
             _isAnalyzing = !apply;
             IsRunning = true;
-            Status = apply ? "Limpieza en curso…" : "Analizando qué se puede limpiar · aún no se modifica nada";
+            Status = Tr.Get(apply ? "Limpieza en curso…" : "Analizando qué se puede limpiar · aún no se modifica nada");
             Action<CleanCategory, CleanTaskState, CleanTaskResult> progress = (c, s, r) => _dispatcher.BeginInvoke((Action)(() => Show(c, s, r, !apply)));
             Task.Factory.StartNew(() =>
             {
@@ -288,7 +301,7 @@ namespace WinMemoryCleaner
                 catch (OperationCanceledException)
                 {
                     return (IList<CleanTaskResult>)OneClickCleanService.Order.Where(c => (selected & c) != 0)
-                        .Select(c => new CleanTaskResult(c) { State = CleanTaskState.Cancelled, Note = "Permiso no concedido o limpieza cancelada" }).ToList();
+                        .Select(c => new CleanTaskResult(c) { State = CleanTaskState.Cancelled, Note = Tr.Get("Permiso no concedido o limpieza cancelada") }).ToList();
                 }
                 catch (Exception e)
                 {
@@ -307,8 +320,8 @@ namespace WinMemoryCleaner
             if (result == null) text = OneClickCleanService.StateText(state);
             else if (!ElevatedOperations.IsFinalResult(state) && !string.IsNullOrEmpty(result.ProgressMessage)) text = result.ProgressMessage;
             else if (state == CleanTaskState.Skipped || state == CleanTaskState.Failed) text = OneClickCleanService.StateText(state) + (string.IsNullOrEmpty(result.Note) ? string.Empty : " · " + result.Note);
-            else if (state == CleanTaskState.Cancelled && result.Bytes == 0 && result.Entries == 0) text = "Cancelado";
-            else text = (estimate ? "Se puede liberar " : string.Empty) + CleanText.Brief(result, estimate) + (string.IsNullOrEmpty(result.Note) ? string.Empty : " · " + result.Note);
+            else if (state == CleanTaskState.Cancelled && result.Bytes == 0 && result.Entries == 0) text = Tr.Get("Cancelado");
+            else text = (estimate ? Tr.Format("Se puede liberar {0}", CleanText.Brief(result, estimate)) : CleanText.Brief(result, estimate)) + (string.IsNullOrEmpty(result.Note) ? string.Empty : " · " + result.Note);
 
             if (category == CleanCategory.Extreme) { ExtremeState = state; ExtremeStatus = text; return; }
             var card = Cards.FirstOrDefault(c => c.Category == category);
@@ -323,10 +336,10 @@ namespace WinMemoryCleaner
             _isCancelling = false;
             _isAnalyzing = false;
             IsRunning = false;
-            if (results == null) { Status = "Ya hay una limpieza en curso, o no se pudo iniciar"; return; }
+            if (results == null) { Status = Tr.Get("Ya hay una limpieza en curso, o no se pudo iniciar"); return; }
             if (!apply)
             {
-                if (cancelled) { Status = "Análisis cancelado · no se modificó nada"; return; }
+                if (cancelled) { Status = Tr.Get("Análisis cancelado · no se modificó nada"); return; }
                 PreviewRows.Clear();
                 foreach (var r in results)
                     PreviewRows.Add(new CleanPreviewRow
@@ -335,16 +348,16 @@ namespace WinMemoryCleaner
                         Text = (r.State == CleanTaskState.Failed || r.State == CleanTaskState.Skipped ? OneClickCleanService.StateText(r.State) : CleanText.Brief(r, true))
                             + (string.IsNullOrEmpty(r.Note) ? string.Empty : " · " + r.Note)
                     });
-                PreviewTotal = "Total estimado: " + CleanText.Size(results.Sum(r => r.Bytes)) + ". Los archivos en uso o recientes se conservarán.";
+                PreviewTotal = Tr.Format("Total estimado: {0}. Los archivos en uso o recientes se conservarán.", CleanText.Size(results.Sum(r => r.Bytes)));
                 RaisePropertyChanged(() => PreviewTotal);
-                Status = "Revisa la vista previa";
+                Status = Tr.Get("Revisa la vista previa");
                 IsPreviewOpen = true;
                 return;
             }
             Report = OneClickCleanService.Report(results);
             cancelled = cancelled || results.Any(r => r.State == CleanTaskState.Cancelled);
             var summary = results.Count == 1 && results[0].Category == CleanCategory.Usb ? CleanText.Brief(results[0], false) : CleanText.Summary(results);
-            Status = (cancelled ? "Cancelado · " : results.All(r => r.State == CleanTaskState.Failed) ? "No se pudo completar · " : "Completado · ") + summary;
+            Status = Tr.Get(cancelled ? "Cancelado · " : results.All(r => r.State == CleanTaskState.Failed) ? "No se pudo completar · " : "Completado · ") + summary;
         }
 
         private void ClosePreview() { IsPreviewOpen = false; }
@@ -374,24 +387,24 @@ namespace WinMemoryCleaner
                 if (last != null && File.Exists(last)) Process.Start("explorer.exe", "/select,\"" + last + "\"");
                 else Process.Start("explorer.exe", "\"" + OneClickCleanService.ReportFolder + "\"");
             }
-            catch (Exception e) { Status = "No se pudo abrir la carpeta de informes: " + e.Message; }
+            catch (Exception e) { Status = Tr.Get("No se pudo abrir la carpeta de informes: ") + e.Message; }
         }
 
         private void UndoRegistry()
         {
             if (!Directory.Exists(RegistryCleanTask.BackupRoot) || !Directory.EnumerateFiles(RegistryCleanTask.BackupRoot, "*.reg", SearchOption.AllDirectories).Any())
-            { Status = "No hay cambios de registro que deshacer"; return; }
+            { Status = Tr.Get("No hay cambios de registro que deshacer"); return; }
             IsRunning = true;
-            Status = "Esperando autorización para restaurar el registro…";
+            Status = Tr.Get("Esperando autorización para restaurar el registro…");
             Task.Factory.StartNew(() => ElevatedOperations.IsAdministrator ? RegistryCleanTask.UndoLast() : ElevatedOperations.UndoRegistry(), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                 .ContinueWith(t => _dispatcher.BeginInvoke((Action)(() =>
                 {
                     IsRunning = false;
-                    if (t.IsFaulted || t.IsCanceled) { Status = "Restauración cancelada o no disponible"; return; }
+                    if (t.IsFaulted || t.IsCanceled) { Status = Tr.Get("Restauración cancelada o no disponible"); return; }
                     var restored = t.Result;
-                    Status = restored < 0 ? "No hay cambios de registro que deshacer"
-                        : restored == 0 ? "No se pudo restaurar el último respaldo del registro"
-                        : "Registro restaurado · " + restored + (restored == 1 ? " respaldo importado" : " respaldos importados");
+                    Status = restored < 0 ? Tr.Get("No hay cambios de registro que deshacer")
+                        : restored == 0 ? Tr.Get("No se pudo restaurar el último respaldo del registro")
+                        : Tr.Format(restored == 1 ? "Registro restaurado · {0} respaldo importado" : "Registro restaurado · {0} respaldos importados", restored);
                 })), TaskScheduler.Default);
         }
     }

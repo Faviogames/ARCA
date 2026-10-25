@@ -58,7 +58,7 @@ namespace WinMemoryCleaner
                 case "OPERA": return "Opera";
                 case "OPERA_GX": return "Opera GX";
                 case "BRAVE": return "Brave";
-                case "EXPLORER": return "Explorador";
+                case "EXPLORER": return Tr.Get("Explorador");
                 case "WINMEMORYCLEANER":
                 case "RAMPROTOTYPE":
                 case "ARCA": return "ARCA";
@@ -69,8 +69,8 @@ namespace WinMemoryCleaner
         internal static string FormatBytes(long bytes)
         {
             return bytes >= 1073741824L
-                ? (bytes / 1073741824d).ToString("0.0", CultureInfo.CurrentCulture) + " GB"
-                : (bytes / 1048576d).ToString("0", CultureInfo.CurrentCulture) + " MB";
+                ? (bytes / 1073741824d).ToString("0.0", Tr.Culture) + " GB"
+                : (bytes / 1048576d).ToString("0", Tr.Culture) + " MB";
         }
     }
 
@@ -96,7 +96,7 @@ namespace WinMemoryCleaner
             _name = sample == null ? string.Empty : TopMemoryApps.DisplayName(sample.Name);
             _usage = sample == null ? string.Empty : TopMemoryApps.FormatBytes(sample.Bytes);
             _rank = sample == null ? string.Empty : "TOP " + rank;
-            Description = sample == null ? "Indicador de uso de RAM" : _rank + ": " + _name + " (" + sample.Name + ") · " + _usage + " de RAM residente aproximada";
+            Description = sample == null ? Tr.Get("Indicador de uso de RAM") : Tr.Format("{0}: {1} ({2}) · {3} de RAM residente aproximada", _rank, _name, sample.Name, _usage);
             RaisePropertyChanged("Name"); RaisePropertyChanged("Usage"); RaisePropertyChanged("Rank"); RaisePropertyChanged("Description");
         }
     }

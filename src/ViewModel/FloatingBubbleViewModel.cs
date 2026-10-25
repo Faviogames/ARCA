@@ -214,9 +214,7 @@ namespace WinMemoryCleaner
         /// <returns>The text for the current app language.</returns>
         public static string Localize(string spanish, string english)
         {
-            var language = Localizer.Language;
-
-            return language != null && language.Name != null && language.Name.StartsWith("es", StringComparison.OrdinalIgnoreCase) ? spanish : english;
+            return Tr.IsSpanish ? spanish : english;
         }
 
         private static string Text(string spanish, string english)

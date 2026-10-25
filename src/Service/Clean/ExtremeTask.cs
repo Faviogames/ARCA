@@ -37,14 +37,14 @@ namespace WinMemoryCleaner
             token.ThrowIfCancellationRequested();
             var delivery = new CleanTaskResult(Category);
             try { DeliveryOptimization(apply, delivery); }
-            catch (Exception e) { delivery.Failed++; delivery.AddNote("Optimización de distribución: " + e.Message); }
+            catch (Exception e) { delivery.Failed++; delivery.AddNote(Tr.Get("Optimización de distribución: ") + e.Message); }
             result.Add(delivery);
 
             token.ThrowIfCancellationRequested();
             // Frees no disk space; it only shows up as a report line, or a failure.
-            if (!apply) result.Detail("Caché DNS: se vaciará");
-            else if (NativeMethods.DnsFlushResolverCache()) result.Detail("Caché DNS vaciada");
-            else { result.Failed++; result.AddNote("Caché DNS no se pudo vaciar"); }
+            if (!apply) result.Detail(Tr.Get("Caché DNS: se vaciará"));
+            else if (NativeMethods.DnsFlushResolverCache()) result.Detail(Tr.Get("Caché DNS vaciada"));
+            else { result.Failed++; result.AddNote(Tr.Get("Caché DNS no se pudo vaciar")); }
         }
 
         /// <summary>Why update leftovers must stay right now, or null when it is safe to remove them.</summary>
@@ -52,10 +52,10 @@ namespace WinMemoryCleaner
         {
             if (keyExists(@"SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired") ||
                 keyExists(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending"))
-                return "Windows Update: actualización pendiente de reinicio";
+                return Tr.Get("Windows Update: actualización pendiente de reinicio");
             // TiWorker is the servicing worker; TrustedInstaller alone often idles after updates.
             if (isRunning("TiWorker"))
-                return "Windows Update: instalación en curso";
+                return Tr.Get("Windows Update: instalación en curso");
             return null;
         }
 
@@ -88,7 +88,7 @@ namespace WinMemoryCleaner
                         if (!restart.Contains(service)) service.Dispose();
                         if (!(e is InvalidOperationException) && !(e is System.ServiceProcess.TimeoutException)) throw;
                         result.Skipped++;
-                        result.AddNote("Windows Update: el servicio " + name + " no se detuvo");
+                        result.AddNote(Tr.Format("Windows Update: el servicio {0} no se detuvo", name));
                         return;
                     }
                 }
@@ -115,7 +115,7 @@ namespace WinMemoryCleaner
         {
             var before = FileCleaner.Measure(DeliveryCache);
             if (before == 0) return;
-            if (!apply) { result.Bytes += before; result.Detail(CleanText.Size(before) + "  Optimización de distribución"); return; }
+            if (!apply) { result.Bytes += before; result.Detail(CleanText.Size(before) + "  " + Tr.Get("Optimización de distribución")); return; }
 
             // The supported cmdlet keeps the service's own bookkeeping consistent, unlike a raw delete.
             var shell = Path.Combine(Environment.SystemDirectory, @"WindowsPowerShell\v1.0\powershell.exe");
@@ -128,19 +128,19 @@ namespace WinMemoryCleaner
                 if (!process.WaitForExit(120000))
                 {
                     try { process.Kill(); } catch (Exception) { }
-                    result.Failed++; result.AddNote("Optimización de distribución: tiempo agotado");
+                    result.Failed++; result.AddNote(Tr.Get("Optimización de distribución: tiempo agotado"));
                     return;
                 }
-                if (process.ExitCode != 0) { result.Failed++; result.AddNote("Optimización de distribución no disponible"); return; }
+                if (process.ExitCode != 0) { result.Failed++; result.AddNote(Tr.Get("Optimización de distribución no disponible")); return; }
             }
             var freed = Math.Max(0, before - FileCleaner.Measure(DeliveryCache));
             result.Bytes += freed;
-            result.Detail(CleanText.Size(freed) + "  Optimización de distribución");
+            result.Detail(CleanText.Size(freed) + "  " + Tr.Get("Optimización de distribución"));
         }
 
         private static void Label(CleanTaskResult result, string what)
         {
-            if (result.Bytes > 0) result.Detail(CleanText.Size(result.Bytes) + "  " + what);
+            if (result.Bytes > 0) result.Detail(CleanText.Size(result.Bytes) + "  " + Tr.Get(what));
         }
 
         private static bool KeyExists(string path)

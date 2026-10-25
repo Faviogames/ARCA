@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -23,12 +23,10 @@ namespace WinMemoryCleaner
         private Computer _computer;
         private readonly IComputerService _computerService;
         private readonly IHotkeyService _hotKeyService;
-        private bool _isOptimizationKeyValid;
         private int _isOptimizationQueued; // RamPrototype: 1 while an optimization is queued or running
         private bool _isOptimizationRunning;
         private bool _closeBrowsersBeforeCleaning;
         private BrowserCloseResult _browserCloseResult;
-        private bool _isReiniziliating;
         private readonly object _lockObject = new object();
         private byte _optimizationProgressPercentage;
         private string _optimizationProgressStep = Localizer.String.Optimize;
@@ -77,14 +75,14 @@ namespace WinMemoryCleaner
                 Computer.OperatingSystem.IsWindows8OrGreater = true;
                 Computer.OperatingSystem.IsWindowsVistaOrGreater = true;
                 Computer.OperatingSystem.IsWindowsXpOrGreater = true;
-                IsOptimizationKeyValid = true;
             }
             else
             {
                 _computerService.OnOptimizeProgressUpdate += OnOptimizeProgressUpdate;
 
                 Computer.OperatingSystem = _computerService.OperatingSystem;
-                UseHotkey = Settings.UseHotkey;
+                // The global cleaning hotkey was removed; switch off a saved one so it never comes back.
+                if (Settings.UseHotkey) { Settings.UseHotkey = false; Settings.Save(); }
 
                 MonitorAsync();
             }
@@ -108,8 +106,8 @@ namespace WinMemoryCleaner
             {
                 if (_browserCloseResult == null) return string.Empty;
                 if (_browserCloseResult.Failed > 0)
-                    return string.Format(Localizer.Culture, "Procesos de navegador cerrados: {0}; sin cerrar: {1}.", _browserCloseResult.Closed, _browserCloseResult.Failed);
-                return _browserCloseResult.Closed == 0 ? "No se encontraron navegadores abiertos compatibles." : string.Format(Localizer.Culture, "Procesos de navegador cerrados: {0}.", _browserCloseResult.Closed);
+                    return Tr.Format("Procesos de navegador cerrados: {0}; sin cerrar: {1}.", _browserCloseResult.Closed, _browserCloseResult.Failed);
+                return _browserCloseResult.Closed == 0 ? Tr.Get("No se encontraron navegadores abiertos compatibles.") : Tr.Format("Procesos de navegador cerrados: {0}.", _browserCloseResult.Closed);
             }
         }
 
@@ -484,25 +482,6 @@ namespace WinMemoryCleaner
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether optimization key is valid.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if optimization key is valid; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsOptimizationKeyValid
-        {
-            get { return _isOptimizationKeyValid; }
-            set
-            {
-                if (_isReiniziliating)
-                    return;
-
-                _isOptimizationKeyValid = value;
-                RaisePropertyChanged();
-            }
-        }
-
-        /// <summary>
         /// Gets or sets a value indicating whether is optimization running.
         /// </summary>
         /// <value>
@@ -544,6 +523,26 @@ namespace WinMemoryCleaner
             {
                 return _hotKeyService.Modifiers;
             }
+        }
+
+        /// <summary>Interface in Spanish (Advanced options selector).</summary>
+        public bool IsSpanishUi
+        {
+            get { return Tr.IsSpanish; }
+            set { if (value) SelectLanguage(Constants.Windows.Locale.Name.Spanish); }
+        }
+
+        /// <summary>Interface in English (Advanced options selector).</summary>
+        public bool IsEnglishUi
+        {
+            get { return !Tr.IsSpanish; }
+            set { if (value) SelectLanguage(Constants.Windows.Locale.Name.English); }
+        }
+
+        private void SelectLanguage(string name)
+        {
+            var language = Localizer.Languages.Find(l => l.Name == name);
+            if (language != null) Language = language;
         }
 
         /// <summary>
@@ -718,54 +717,6 @@ namespace WinMemoryCleaner
         public List<byte> MemoryUsageThresholds { get; private set; }
 
         /// <summary>
-        /// Gets or sets the optimization key.
-        /// </summary>
-        /// <value>
-        /// The optimization key.
-        /// </value>
-        public Key OptimizationKey
-        {
-            get { return Settings.OptimizationKey; }
-            set
-            {
-                try
-                {
-                    IsBusy = true;
-
-                    RegisterOptimizationHotkey(Settings.OptimizationModifiers, value);
-                }
-                finally
-                {
-                    IsBusy = false;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the optimization modifiers.
-        /// </summary>
-        /// <value>
-        /// The optimization modifiers.
-        /// </value>
-        public ModifierKeys OptimizationModifiers
-        {
-            get { return Settings.OptimizationModifiers; }
-            set
-            {
-                try
-                {
-                    IsBusy = true;
-
-                    RegisterOptimizationHotkey(value, Settings.OptimizationKey);
-                }
-                finally
-                {
-                    IsBusy = false;
-                }
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the optimization progress percentage.
         /// </summary>
         /// <value>
@@ -932,7 +883,7 @@ namespace WinMemoryCleaner
                 {
                     Logger.Error(e);
                     RaisePropertyChanged(() => RunOnStartup);
-                    System.Windows.MessageBox.Show("No se pudo cambiar el inicio con Windows: " + e.Message, "ARCA", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                    System.Windows.MessageBox.Show(Tr.Get("No se pudo cambiar el inicio con Windows: ") + e.Message, "ARCA", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 }
                 finally
                 {
@@ -979,8 +930,7 @@ namespace WinMemoryCleaner
                        new ObservableItem<bool>(Localizer.String.RunOnLowPriority, () => RunOnLowPriority, value => RunOnLowPriority = value),
                        new ObservableItem<bool>(Localizer.String.RunOnStartup, () => RunOnStartup, value => RunOnStartup = value),
                        new ObservableItem<bool>(Localizer.String.ShowOptimizationNotifications, () => ShowOptimizationNotifications, value => ShowOptimizationNotifications = value),
-                       new ObservableItem<bool>(Localizer.String.ShowVirtualMemory, () => ShowVirtualMemory, value => ShowVirtualMemory = value),
-                       new ObservableItem<bool>(Localizer.String.StartMinimized, () => StartMinimized, value => StartMinimized = value)
+                       new ObservableItem<bool>(Localizer.String.ShowVirtualMemory, () => ShowVirtualMemory, value => ShowVirtualMemory = value)
                     }
                     .OrderBy(item => item.Name)
                 );
@@ -1033,65 +983,6 @@ namespace WinMemoryCleaner
                     Settings.Save();
 
                     NotificationService.Update(Computer.Memory, IsOptimizationRunning);
-
-                    RaisePropertyChanged();
-                }
-                finally
-                {
-                    IsBusy = false;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether [start minimized].
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if [start minimized]; otherwise, <c>false</c>.
-        /// </value>
-        public bool StartMinimized
-        {
-            get { return Settings.StartMinimized; }
-            set
-            {
-                try
-                {
-                    IsBusy = true;
-
-                    Settings.StartMinimized = value;
-                    Settings.Save();
-
-                    RaisePropertyChanged();
-                }
-                finally
-                {
-                    IsBusy = false;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating can [use hotkey].
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if [use hotkey]; otherwise, <c>false</c>.
-        /// </value>
-        public bool UseHotkey
-        {
-            get { return Settings.UseHotkey; }
-            set
-            {
-                try
-                {
-                    IsBusy = true;
-
-                    Settings.UseHotkey = value;
-                    Settings.Save();
-
-                    if (value)
-                        RegisterOptimizationHotkey(Settings.OptimizationModifiers, Settings.OptimizationKey);
-                    else
-                        UnregisterOptimizationHotkey();
 
                     RaisePropertyChanged();
                 }
@@ -1822,11 +1713,11 @@ namespace WinMemoryCleaner
                 }
                 catch (OperationCanceledException)
                 {
-                    OptimizationProgressStep = "Limpieza cancelada · permiso no concedido";
+                    OptimizationProgressStep = Tr.Get("Limpieza cancelada · permiso no concedido");
                 }
                 catch (Exception e)
                 {
-                    OptimizationProgressStep = "No se pudo completar la limpieza";
+                    OptimizationProgressStep = Tr.Get("No se pudo completar la limpieza");
                     Logger.Error(e);
                 }
                 finally
@@ -1901,38 +1792,6 @@ namespace WinMemoryCleaner
         }
 
         /// <summary>
-        /// Registers the optimization hotkey.
-        /// </summary>
-        /// <param name="modifiers">The modifiers.</param>
-        /// <param name="key">The key.</param>
-        private void RegisterOptimizationHotkey(ModifierKeys modifiers, Key key)
-        {
-            UnregisterOptimizationHotkey();
-
-            Settings.OptimizationKey = key;
-            Settings.OptimizationModifiers = modifiers;
-
-            var hotKey = new Hotkey(Settings.OptimizationModifiers, Settings.OptimizationKey);
-
-            IsOptimizationKeyValid = _hotKeyService.Register(hotKey, () => OptimizeAsync(Enums.Memory.Optimization.Reason.Manual));
-
-            if (!_isReiniziliating && !IsOptimizationKeyValid)
-            {
-                var message = string.Format(Localizer.Culture, Localizer.String.HotkeyIsInUseByOperatingSystem, hotKey);
-
-                Logger.Warning(message);
-                NotificationService.Notify(message);
-
-                return;
-            }
-
-            Settings.Save();
-
-            RaisePropertyChanged(() => OptimizationKey);
-            RaisePropertyChanged(() => OptimizationModifiers);
-        }
-
-        /// <summary>
         /// Reinitializes app after system resume from hibernation.
         /// </summary>
         public void ReinitializeAfterHibernation()
@@ -1941,11 +1800,6 @@ namespace WinMemoryCleaner
             {
                 lock (_lockObject)
                 {
-                    _isReiniziliating = true;
-
-                    if (UseHotkey)
-                        RegisterOptimizationHotkey(Settings.OptimizationModifiers, Settings.OptimizationKey);
-
                     Computer.Memory = _computerService.Memory;
 
                     NotificationService.Update(Computer.Memory, IsOptimizationRunning);
@@ -1958,10 +1812,6 @@ namespace WinMemoryCleaner
             catch (Exception e)
             {
                 Logger.Error("Error after system resume from hibernation: " + e.GetMessage());
-            }
-            finally
-            {
-                _isReiniziliating = false;
             }
         }
 
@@ -2008,8 +1858,6 @@ namespace WinMemoryCleaner
                 ThemeManager.Theme = Enums.Theme.Dark;
 
                 FontSize = Settings.FontSize;
-                OptimizationKey = Settings.OptimizationKey;
-                OptimizationModifiers = Settings.OptimizationModifiers;
 
                 _trayIconItems = null;
 
@@ -2022,16 +1870,6 @@ namespace WinMemoryCleaner
             {
                 IsBusy = false;
             }
-        }
-
-        /// <summary>
-        /// Unregisters the optimization hotkey.
-        /// </summary>
-        private void UnregisterOptimizationHotkey()
-        {
-            _hotKeyService.Unregister(new Hotkey(Settings.OptimizationModifiers, Settings.OptimizationKey));
-
-            IsOptimizationKeyValid = true;
         }
 
         #endregion

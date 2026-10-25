@@ -117,10 +117,14 @@ namespace WinMemoryCleaner
     /// <summary>Formatting shared by the window, the preview and the report.</summary>
     public static class CleanText
     {
-        private static readonly CultureInfo _es = new CultureInfo("es-ES");
 
         /// <summary>Spanish display name of a category.</summary>
         public static string Name(CleanCategory category)
+        {
+            return Tr.Get(SpanishName(category));
+        }
+
+        private static string SpanishName(CleanCategory category)
         {
             switch (category)
             {
@@ -138,9 +142,9 @@ namespace WinMemoryCleaner
         /// <summary>Human size, e.g. "850 MB" or "1,2 GB".</summary>
         public static string Size(long bytes)
         {
-            if (bytes >= 1L << 30) return (bytes / (double)(1L << 30)).ToString("0.0", _es) + " GB";
-            if (bytes >= 1L << 20) return (bytes / (double)(1L << 20)).ToString("0", _es) + " MB";
-            if (bytes >= 1L << 10) return (bytes / (double)(1L << 10)).ToString("0", _es) + " KB";
+            if (bytes >= 1L << 30) return (bytes / (double)(1L << 30)).ToString("0.0", Tr.Culture) + " GB";
+            if (bytes >= 1L << 20) return (bytes / (double)(1L << 20)).ToString("0", Tr.Culture) + " MB";
+            if (bytes >= 1L << 10) return (bytes / (double)(1L << 10)).ToString("0", Tr.Culture) + " KB";
             return bytes + " B";
         }
 
@@ -152,11 +156,11 @@ namespace WinMemoryCleaner
             if (r.Bytes > 0 || r.Files > 0) parts.Add(Size(r.Bytes));
             if (r.Files > 0) parts.Add(Plural(r.Files, "archivo", "archivos"));
             if (r.Entries > 0) parts.Add(Plural(r.Entries, EntryNoun(r.Category, false), EntryNoun(r.Category, true)));
-            if (parts.Count == 0) parts.Add(r.Category == CleanCategory.Usb
+            if (parts.Count == 0) parts.Add(Tr.Get(r.Category == CleanCategory.Usb
                 ? r.Failed > 0 ? "Ningún registro de dispositivo retirado" : "No hay dispositivos desconectados para limpiar"
-                : estimate ? "Nada que limpiar" : "Ya estaba limpio");
-            if (r.Skipped > 0) parts.Add(r.Skipped + " omitidos");
-            if (r.Failed > 0) parts.Add(r.Failed + " fallos");
+                : estimate ? "Nada que limpiar" : "Ya estaba limpio"));
+            if (r.Skipped > 0) parts.Add(Tr.Format("{0} omitidos", r.Skipped));
+            if (r.Failed > 0) parts.Add(Tr.Format("{0} fallos", r.Failed));
             return string.Join(" · ", parts.ToArray());
         }
 
@@ -173,13 +177,13 @@ namespace WinMemoryCleaner
                 else if (r.Category == CleanCategory.Registry) registry += r.Entries;
                 else if (r.Category == CleanCategory.Usb) devices += r.Entries;
             }
-            var parts = new List<string> { Size(bytes) + " liberados" };
+            var parts = new List<string> { Tr.Format("{0} liberados", Size(bytes)) };
             parts.Add(Plural(files, "archivo eliminado", "archivos eliminados"));
             if (shortcuts > 0) parts.Add(Plural(shortcuts, "acceso retirado", "accesos retirados"));
             if (registry > 0) parts.Add(Plural(registry, "entrada retirada", "entradas retiradas"));
             if (devices > 0) parts.Add(Plural(devices, "dispositivo retirado", "dispositivos retirados"));
-            if (skipped > 0) parts.Add(skipped + " omitidos");
-            if (failed > 0) parts.Add(failed + " fallos");
+            if (skipped > 0) parts.Add(Tr.Format("{0} omitidos", skipped));
+            if (failed > 0) parts.Add(Tr.Format("{0} fallos", failed));
             if (failedTasks > 0) parts.Add(Plural(failedTasks, "categoría con error", "categorías con error"));
             return string.Join(" · ", parts.ToArray());
         }
@@ -195,6 +199,7 @@ namespace WinMemoryCleaner
             }
         }
 
-        private static string Plural(int n, string one, string many) { return n + " " + (n == 1 ? one : many); }
+        // one and many are Spanish source texts.
+        private static string Plural(int n, string one, string many) { return n + " " + Tr.Get(n == 1 ? one : many); }
     }
 }

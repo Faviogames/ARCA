@@ -173,7 +173,7 @@ namespace WinMemoryCleaner
         private static void SkipBrowser(CleanTaskResult result, string name)
         {
             result.Skipped++;
-            result.AddNote(name + " abierto");
+            result.AddNote(Tr.Format("{0} abierto", name));
         }
 
         private static IEnumerable<string> Profiles(string userData)

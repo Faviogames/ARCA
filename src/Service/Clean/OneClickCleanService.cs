@@ -116,7 +116,7 @@ namespace WinMemoryCleaner
         {
             if (results == null) throw new ArgumentNullException("results");
             var text = new StringBuilder();
-            text.AppendLine("ARCA · 1 Clic Clean · " + DateTime.Now.ToString("g", new CultureInfo("es-ES")));
+            text.AppendLine("ARCA · 1 Clic Clean · " + DateTime.Now.ToString("g", Tr.Culture));
             text.AppendLine(CleanText.Summary(results));
             foreach (var r in results)
             {
@@ -129,6 +129,11 @@ namespace WinMemoryCleaner
         }
 
         internal static string StateText(CleanTaskState state)
+        {
+            return Tr.Get(SpanishStateText(state));
+        }
+
+        private static string SpanishStateText(CleanTaskState state)
         {
             switch (state)
             {

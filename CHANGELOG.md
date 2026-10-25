@@ -1,5 +1,14 @@
 # Cambios de ARCA
 
+## 1.0.3 — 25 de octubre de 2026
+
+- Ayuda de Limpieza extrema más corta; se mantiene el aviso «Deberás cargar shaders de nuevo».
+- Eliminada la casilla «Iniciar minimizado». El acceso de Inicio abre ARCA en la bandeja (`/Tray`); los accesos de versiones anteriores se actualizan al abrir la app. Abrirla a mano muestra siempre la ventana.
+- Interfaz en inglés: selector «Idioma: Español / English» en Opciones avanzadas, con cambio inmediato y sin reiniciar. Cubre la ventana, 1 Clic Clean, la burbuja, la bandeja, ayudas, estados, errores propios e informes; los números siguen el idioma. Los nombres de aplicaciones y dispositivos y los mensajes devueltos por Windows no se traducen. Si la preferencia guardada no es español, ARCA usa inglés.
+- Eliminado el atajo global de limpieza de RAM. Si estaba activado, se desactiva y deja de registrarse; restablecer la configuración tampoco lo vuelve a registrar.
+
+La limpieza semanal sigue pendiente de definir e implementar; esta versión no ejecuta mantenimiento automático.
+
 ## 1.0.2 — 25 de octubre de 2026
 
 - Textos de interfaz: «1 Clic Clean», «Caché de navegadores y Discord» y ayuda breve para recordar que las aplicaciones deben estar cerradas.

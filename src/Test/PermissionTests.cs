@@ -82,9 +82,10 @@ namespace WinMemoryCleaner.Test
                     link.GetPath(path, path.Capacity, IntPtr.Zero, 0);
                     Assert.AreEqual(Helper.GetExecutablePath(), path.ToString());
                     link.GetArguments(path, path.Capacity);
-                    Assert.AreEqual(string.Empty, path.ToString(), "Startup must not request any cleaning operation.");
+                    Assert.AreEqual("/Tray", path.ToString(), "Startup only opens in the tray; it must not request any cleaning operation.");
                 }
                 finally { System.Runtime.InteropServices.Marshal.FinalReleaseComObject(link); }
+                Assert.AreEqual("/Tray", UserStartupService.ReadArguments(shortcut));
                 UserStartupService.SetEnabled(false, shortcut, Helper.GetExecutablePath());
                 Assert.IsFalse(File.Exists(shortcut));
                 UserStartupService.SetEnabled(false, shortcut, Helper.GetExecutablePath());

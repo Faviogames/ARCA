@@ -453,17 +453,6 @@ namespace WinMemoryCleaner.Test
             }
 
             [Test]
-            public void StartMinimized_SetValue_UpdatesSettings()
-            {
-                var initialValue = _viewModel.StartMinimized;
-
-                _viewModel.StartMinimized = !initialValue;
-
-                Assert.AreEqual(!initialValue, _viewModel.StartMinimized);
-                Assert.AreEqual(!initialValue, Settings.StartMinimized);
-            }
-
-            [Test]
             public void Title_IsNotEmpty()
             {
                 // Verify Localizer is properly initialized

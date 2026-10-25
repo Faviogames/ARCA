@@ -49,6 +49,7 @@ namespace WinMemoryCleaner
                 public const string Install = "Install";
                 public const string Reset = "Reset";
                 public const string Service = "Service";
+                public const string Tray = "Tray";
                 public const string Uninstall = "Uninstall";
             }
 
@@ -140,6 +141,7 @@ namespace WinMemoryCleaner
                     public const string PortugueseBrazil = "pt-BR";
                     public const string PortuguesePortugal = "pt-PT";
                     public const string SimplifiedChinese = "zh-Hans";
+                    public const string Spanish = "es";
                     public const string TraditionalChinese = "zh-Hant";
                 }
             }

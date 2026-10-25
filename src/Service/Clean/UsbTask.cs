@@ -48,9 +48,9 @@ namespace WinMemoryCleaner
             // USB and other classes. The persisted category bit keeps its legacy name.
             const string enumerator = null;
             {
-                result.Progress("Revisando dispositivos desconectados de Windows…");
+                result.Progress(Tr.Get("Revisando dispositivos desconectados de Windows…"));
                 var set = SetupDiGetClassDevsW(IntPtr.Zero, enumerator, IntPtr.Zero, DIGCF_ALLCLASSES);
-                if (set == INVALID_HANDLE_VALUE) { result.Failed++; result.AddNote("No se pudo leer la lista de dispositivos de Windows"); return; }
+                if (set == INVALID_HANDLE_VALUE) { result.Failed++; result.AddNote(Tr.Get("No se pudo leer la lista de dispositivos de Windows")); return; }
                 try
                 {
                     var devices = new List<SP_DEVINFO_DATA>();
@@ -61,7 +61,7 @@ namespace WinMemoryCleaner
                         if (!SetupDiEnumDeviceInfo(set, i, ref item))
                         {
                             var error = Marshal.GetLastWin32Error();
-                            if (error != 259) { result.Failed++; result.AddNote("No se pudo completar la revisión de dispositivos · error " + error); }
+                            if (error != 259) { result.Failed++; result.AddNote(Tr.Format("No se pudo completar la revisión de dispositivos · error {0}", error)); }
                             break;
                         }
                         if (ShouldRemove(IsPresent(item.DevInst))) devices.Add(item);
@@ -76,13 +76,13 @@ namespace WinMemoryCleaner
 
                         var name = Name(set, ref data);
                         var instanceId = InstanceId(set, ref data);
-                        var line = name + "  (dispositivo desconectado · sin espera mínima)";
-                        if (instanceId == null) { result.Skipped++; result.Detail("Omitido: no se pudo identificar " + name); continue; }
+                        var line = name + Tr.Get("  (dispositivo desconectado · sin espera mínima)");
+                        if (instanceId == null) { result.Skipped++; result.Detail(Tr.Format("Omitido: no se pudo identificar {0}", name)); continue; }
                         if (!apply) { result.Entries++; result.Detail(line); continue; }
                         if (IsRegistered(enumerator, instanceId) == false)
-                        { result.Skipped++; result.Detail("Ya no estaba registrado: " + name); continue; }
+                        { result.Skipped++; result.Detail(Tr.Format("Ya no estaba registrado: {0}", name)); continue; }
                         token.ThrowIfCancellationRequested();
-                        result.Progress("Retirando " + (i + 1) + "/" + devices.Count + " · " + name);
+                        result.Progress(Tr.Format("Retirando {0}/{1} · {2}", i + 1, devices.Count, name));
                         var error = 0;
                         var removed = RemoveWithProgress(result, name, () => IsPresent(data.DevInst), () =>
                         {
@@ -90,18 +90,18 @@ namespace WinMemoryCleaner
                             if (!success) error = Marshal.GetLastWin32Error();
                             return success;
                         }, token);
-                        if (!removed.HasValue) { result.Skipped++; result.Detail("Omitido: ya no se confirma la desconexión de " + name); }
+                        if (!removed.HasValue) { result.Skipped++; result.Detail(Tr.Format("Omitido: ya no se confirma la desconexión de {0}", name)); }
                         else if (removed.Value)
                         {
                             var registered = IsRegistered(enumerator, instanceId);
-                            if (RemovalConfirmed(true, registered)) { result.Entries++; result.Detail("Retirado y verificado: " + line); }
+                            if (RemovalConfirmed(true, registered)) { result.Entries++; result.Detail(Tr.Format("Retirado y verificado: {0}", line)); }
                             else
                             {
                                 result.Failed++;
-                                result.Detail("Retirada no confirmada: " + name + (registered == true ? " · el registro sigue apareciendo en Windows" : " · no se pudo verificar la lista de Windows"));
+                                result.Detail(Tr.Format(registered == true ? "Retirada no confirmada: {0} · el registro sigue apareciendo en Windows" : "Retirada no confirmada: {0} · no se pudo verificar la lista de Windows", name));
                             }
                         }
-                        else { result.Failed++; result.Detail("No se pudo retirar: " + line + " · error " + error); }
+                        else { result.Failed++; result.Detail(Tr.Format("No se pudo retirar: {0} · error {1}", line, error)); }
                     }
                 }
                 finally { SetupDiDestroyDeviceInfoList(set); }
@@ -145,7 +145,7 @@ namespace WinMemoryCleaner
             using (var timer = new Timer(_ =>
             {
                 lock (gate)
-                    if (waiting) result.Progress((token.IsCancellationRequested ? "Cancelación pendiente · " : "Esperando a Windows · ") + name + " · " + (int)elapsed.Elapsed.TotalSeconds + " s");
+                    if (waiting) result.Progress(Tr.Format(token.IsCancellationRequested ? "Cancelación pendiente · {0} · {1} s" : "Esperando a Windows · {0} · {1} s", name, (int)elapsed.Elapsed.TotalSeconds));
             }, null, 8000, 5000))
             {
                 try { return RemoveIfDisconnected(present, remove); }
@@ -167,7 +167,7 @@ namespace WinMemoryCleaner
             }
             var id = new StringBuilder(512);
             int size;
-            return SetupDiGetDeviceInstanceIdW(set, ref data, id, id.Capacity, out size) ? id.ToString() : "Dispositivo";
+            return SetupDiGetDeviceInstanceIdW(set, ref data, id, id.Capacity, out size) ? id.ToString() : Tr.Get("Dispositivo");
         }
 
         private const int DIGCF_ALLCLASSES = 0x4, DIF_REMOVE = 0x5, CR_NO_SUCH_DEVINST = 0xD;

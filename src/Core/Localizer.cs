@@ -36,14 +36,8 @@ namespace WinMemoryCleaner
         {
             String = new Localization();
 
-            try
-            {
-                Culture = new CultureInfo(Settings.Language);
-            }
-            catch
-            {
-                Culture = new CultureInfo(Constants.Windows.Locale.Name.English);
-            }
+            // ARCA ships Spanish and English only; any other saved language falls back to English.
+            Culture = new CultureInfo(IsSpanish(Settings.Language) ? Constants.Windows.Locale.Name.Spanish : Constants.Windows.Locale.Name.English);
 
             Language = new Language(Culture);
         }
@@ -140,7 +134,7 @@ namespace WinMemoryCleaner
                         // ignored
                     }
 
-                    return CultureInfo.GetCultures(CultureTypes.AllCultures)
+                    return new[] { new CultureInfo(Constants.Windows.Locale.Name.English), new CultureInfo(Constants.Windows.Locale.Name.Spanish) }
                         .Where(culture => resourceNames.Contains(culture.EnglishName, StringComparer.OrdinalIgnoreCase))
                         .OrderBy(culture => culture.EnglishName, StringComparer.InvariantCultureIgnoreCase)
                         .Select(culture => new Language(culture))
@@ -200,6 +194,11 @@ namespace WinMemoryCleaner
 
             Culture = new CultureInfo(language.Name);
             String = localization;
+        }
+
+        private static bool IsSpanish(string name)
+        {
+            return name != null && name.StartsWith(Constants.Windows.Locale.Name.Spanish, StringComparison.OrdinalIgnoreCase);
         }
 
         private static void RaiseStaticPropertyChanged(string propertyName = null)

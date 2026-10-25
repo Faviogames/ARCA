@@ -273,7 +273,7 @@ namespace WinMemoryCleaner
             }
             catch (Exception) { }
             result.Failed++;
-            result.AddNote("Sin respaldo, no se modificó " + key);
+            result.AddNote(Tr.Format("Sin respaldo, no se modificó {0}", key));
             return false;
         }
 

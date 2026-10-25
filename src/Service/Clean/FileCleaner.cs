@@ -65,7 +65,7 @@ namespace WinMemoryCleaner
             if (!IsSafeRoot(target))
             {
                 result.Failed++;
-                result.Detail("Ruta rechazada por seguridad: " + (target == null ? "(nula)" : target.Path));
+                result.Detail(Tr.Format("Ruta rechazada por seguridad: {0}", target == null ? Tr.Get("(nula)") : target.Path));
                 return;
             }
             DirectoryInfo root;

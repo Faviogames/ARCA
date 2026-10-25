@@ -31,6 +31,7 @@ namespace WinMemoryCleaner
             for (var i = 0; i < 8; i++) Chips.Add(new RamChip());
             OneClick = new OneClickCleanViewModel();
             InitializeComponent();
+            UseLanguageForNumbers();
             _dashboardTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
             _dashboardTimer.Tick += (sender, e) => RefreshDashboard();
             IsVisibleChanged += OnDashboardVisibilityChanged;
@@ -41,6 +42,7 @@ namespace WinMemoryCleaner
             _viewModel.OnOptimizationFinished += OnOptimizationFinished;
             _viewModel.OnAddProcessToExclusionListCommandCompleted += ScrollExclusions;
             Closed += OnDashboardClosed;
+            Localizer.StaticPropertyChanged += OnLanguageChanged;
             Loaded += (sender, e) =>
             {
                 var area = SystemParameters.WorkArea;
@@ -83,8 +85,8 @@ namespace WinMemoryCleaner
                 {
                     if (_closed || !IsVisible || WindowState == WindowState.Minimized) return;
                     for (var i = 0; i < 3; i++) Chips[i].Update(top != null && i < top.Count ? top[i] : null, i + 1);
-                    TopAppsStatus.Text = top == null ? "TOP 3 · NO DISPONIBLE" : "TOP 3 · MAYOR CONSUMO";
-                    TopAppsStatus.ToolTip = "RAM residente aproximada; procesos agrupados por ejecutable en esta sesión. Las páginas compartidas pueden contarse varias veces. Actualización cada 5 s.";
+                    TopAppsStatus.Text = Tr.Get(top == null ? "TOP 3 · NO DISPONIBLE" : "TOP 3 · MAYOR CONSUMO");
+                    TopAppsStatus.ToolTip = Tr.Get("RAM residente aproximada; procesos agrupados por ejecutable en esta sesión. Las páginas compartidas pueden contarse varias veces. Actualización cada 5 s.");
                 }), DispatcherPriority.Background);
             });
         }
@@ -110,8 +112,27 @@ namespace WinMemoryCleaner
             if (e.PropertyName != "IsOptimizationRunning") return;
             Dispatcher.BeginInvoke((Action)(() =>
             {
-                CleanButtonLabel.Text = _viewModel.IsOptimizationRunning ? "Limpiando memoria…" : "Limpiar memoria";
-                if (_viewModel.IsOptimizationRunning) CleaningStatus.Text = "Limpieza en curso…";
+                CleanButtonLabel.Text = Tr.Get(_viewModel.IsOptimizationRunning ? "Limpiando memoria…" : "Limpiar memoria");
+                if (_viewModel.IsOptimizationRunning) CleaningStatus.Text = Tr.Get("Limpieza en curso…");
+            }));
+        }
+
+        // XAML StringFormat (memory totals) formats with the element language, not the thread culture.
+        private void UseLanguageForNumbers()
+        {
+            Language = System.Windows.Markup.XmlLanguage.GetLanguage(Tr.Culture.IetfLanguageTag);
+        }
+
+        // Texts set from code do not follow the language binding; reset them and resample the top apps.
+        private void OnLanguageChanged(object sender, PropertyChangedEventArgs e)
+        {
+            Dispatcher.BeginInvoke((Action)(() =>
+            {
+                if (_closed || _viewModel == null) return;
+                UseLanguageForNumbers();
+                CleanButtonLabel.Text = Tr.Get(_viewModel.IsOptimizationRunning ? "Limpiando memoria…" : "Limpiar memoria");
+                CleaningStatus.Text = Tr.Get(_viewModel.IsOptimizationRunning ? "Limpieza en curso…" : "Limpieza manual · Tú decides cuándo");
+                _lastSample = DateTime.MinValue;
             }));
         }
 
@@ -120,7 +141,7 @@ namespace WinMemoryCleaner
             // Never restore or focus the main window after cleaning from the bubble.
             var formatter = new FloatingBubbleViewModel(_viewModel.OptimizeCommand);
             formatter.OnOptimizationFinished(result);
-            CleaningStatus.Text = result.Succeeded ? "Limpieza completada · " + formatter.ResultText : "Limpieza incompleta. Consulta el registro de la aplicación.";
+            CleaningStatus.Text = result.Succeeded ? Tr.Get("Limpieza completada · ") + formatter.ResultText : Tr.Get("Limpieza incompleta. Consulta el registro de la aplicación.");
             if (!string.IsNullOrEmpty(_viewModel.BrowserCloseSummary))
                 CleaningStatus.Text += Environment.NewLine + _viewModel.BrowserCloseSummary;
         }
@@ -128,6 +149,7 @@ namespace WinMemoryCleaner
         private void OnDashboardClosed(object sender, EventArgs e)
         {
             _closed = true;
+            Localizer.StaticPropertyChanged -= OnLanguageChanged;
             OneClick.Dispose();
             _dashboardTimer.Stop();
             IsVisibleChanged -= OnDashboardVisibilityChanged;

@@ -10,9 +10,17 @@ namespace WinMemoryCleaner.Test
     [SetUpFixture]
     public sealed class TestCleanup
     {
+        // Tests assert the Spanish texts, whatever language the developer picked in ARCA.
+        [SetUp]
+        public void UseSpanishTexts()
+        {
+            Tr.Override = Constants.Windows.Locale.Name.Spanish;
+        }
+
         [TearDown]
         public void ResetSettingsAfterAllTests()
         {   
+            Tr.Override = null;
             Settings.Reset(true);
             Assert.IsTrue(true, "Settings have been reset to defaults");
         }

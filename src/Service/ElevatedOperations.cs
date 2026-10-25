@@ -55,7 +55,7 @@ namespace WinMemoryCleaner
                 var kind = reader.ReadByte();
                 if (kind == 0) return false;
                 if (kind == 4) throw new InvalidOperationException(reader.ReadString());
-                if (kind != 1) throw new InvalidDataException("Respuesta de limpieza no válida.");
+                if (kind != 1) throw new InvalidDataException(Tr.Get("Respuesta de limpieza no válida."));
                 var category = (CleanCategory)reader.ReadInt32();
                 var state = (CleanTaskState)reader.ReadInt32();
                 var result = reader.ReadBoolean() ? ReadResult(reader, category, state) : null;
@@ -78,7 +78,7 @@ namespace WinMemoryCleaner
                 if (kind == 4) throw new InvalidOperationException(reader.ReadString());
                 if (kind == 2) { var value = reader.ReadByte(); var step = reader.ReadString(); if (progress != null) progress(value, step); }
                 else if (kind == 3) { success = reader.ReadBoolean(); closed.Closed = reader.ReadInt32(); closed.Failed = reader.ReadInt32(); }
-                else throw new InvalidDataException("Respuesta de memoria no válida.");
+                else throw new InvalidDataException(Tr.Get("Respuesta de memoria no válida."));
                 return true;
             }, CancellationToken.None);
             browsers = closeBrowsers ? closed : null;
@@ -93,7 +93,7 @@ namespace WinMemoryCleaner
                 var kind = reader.ReadByte();
                 if (kind == 0) return false;
                 if (kind == 4) throw new InvalidOperationException(reader.ReadString());
-                if (kind != 5) throw new InvalidDataException("Respuesta de respaldo no válida.");
+                if (kind != 5) throw new InvalidDataException(Tr.Get("Respuesta de respaldo no válida."));
                 restored = reader.ReadInt32();
                 return true;
             }, CancellationToken.None);
@@ -118,8 +118,8 @@ namespace WinMemoryCleaner
                     worker = Process.Start(new ProcessStartInfo(Helper.GetExecutablePath(), WorkerArgument + " " + name + " " + Process.GetCurrentProcess().Id)
                     { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden });
                 }
-                catch (Win32Exception e) { if (e.NativeErrorCode == 1223) throw new OperationCanceledException("Permiso de administrador cancelado."); throw; }
-                if (worker == null) throw new InvalidOperationException("No se pudo abrir el auxiliar de limpieza.");
+                catch (Win32Exception e) { if (e.NativeErrorCode == 1223) throw new OperationCanceledException(Tr.Get("Permiso de administrador cancelado.")); throw; }
+                if (worker == null) throw new InvalidOperationException(Tr.Get("No se pudo abrir el auxiliar de limpieza."));
                 using (worker)
                 {
                     var connection = pipe.BeginWaitForConnection(null, null);
@@ -129,12 +129,12 @@ namespace WinMemoryCleaner
                         while (!connection.AsyncWaitHandle.WaitOne(100))
                         {
                             token.ThrowIfCancellationRequested();
-                            if (worker.HasExited || DateTime.UtcNow > deadline) throw new IOException("El auxiliar no pudo conectarse. No se inició la limpieza.");
+                            if (worker.HasExited || DateTime.UtcNow > deadline) throw new IOException(Tr.Get("El auxiliar no pudo conectarse. No se inició la limpieza."));
                         }
                         pipe.EndWaitForConnection(connection);
                     }
                     uint client;
-                    if (!GetNamedPipeClientProcessId(pipe.SafePipeHandle, out client) || client != worker.Id) throw new InvalidDataException("Auxiliar no reconocido.");
+                    if (!GetNamedPipeClientProcessId(pipe.SafePipeHandle, out client) || client != worker.Id) throw new InvalidDataException(Tr.Get("Auxiliar no reconocido."));
                     var writer = new BinaryWriter(pipe);
                     var reader = new BinaryReader(pipe);
                     writer.Write(user.Value); writer.Write(operation); writer.Write(selection); writer.Write(closeBrowsers); writer.Flush();
@@ -170,7 +170,7 @@ namespace WinMemoryCleaner
                     // Elevating with another account would otherwise clean that account's profile.
                     if (owner != WindowsIdentity.GetCurrent().User.Value)
                     {
-                        writer.Write((byte)4); writer.Write("La limpieza debe autorizarse con la misma cuenta de Windows que abrió ARCA."); writer.Write((byte)0); writer.Flush(); return true;
+                        writer.Write((byte)4); writer.Write(Tr.Get("La limpieza debe autorizarse con la misma cuenta de Windows que abrió ARCA.")); writer.Write((byte)0); writer.Flush(); return true;
                     }
                     var operation = reader.ReadString();
                     var selected = reader.ReadInt32();
@@ -210,7 +210,7 @@ namespace WinMemoryCleaner
                                 writer.Write(browsers == null ? 0 : browsers.Closed); writer.Write(browsers == null ? 0 : browsers.Failed);
                             }
                             else if (operation == "undo" && selected == 0) { writer.Write((byte)5); writer.Write(RegistryCleanTask.UndoLast()); }
-                            else throw new InvalidDataException("Operación no permitida.");
+                            else throw new InvalidDataException(Tr.Get("Operación no permitida."));
                         }
                         catch (Exception e) { writer.Write((byte)4); writer.Write(e.Message); }
                         writer.Write((byte)0); writer.Flush();
@@ -234,7 +234,7 @@ namespace WinMemoryCleaner
         {
             var result = new CleanTaskResult(category) { State = state, Bytes = reader.ReadInt64(), Files = reader.ReadInt32(), Entries = reader.ReadInt32(), Skipped = reader.ReadInt32(), Failed = reader.ReadInt32(), Note = reader.ReadString(), ProgressMessage = reader.ReadString() };
             var count = reader.ReadInt32();
-            if (count < 0 || count > 401) throw new InvalidDataException("Informe no válido.");
+            if (count < 0 || count > 401) throw new InvalidDataException(Tr.Get("Informe no válido."));
             for (var i = 0; i < count; i++) result.Detail(reader.ReadString());
             return result;
         }

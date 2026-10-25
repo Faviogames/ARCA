@@ -367,6 +367,7 @@ namespace WinMemoryCleaner
         protected override void OnStartup(StartupEventArgs startupEvent)
         {
             var startupType = Enums.StartupType.App;
+            var startInTray = false;
 
             try
             {
@@ -377,6 +378,8 @@ namespace WinMemoryCleaner
                 }
                 Initialize();
                 Settings.RunOnStartup = UserStartupService.IsEnabled;
+                try { UserStartupService.Upgrade(); }
+                catch (Exception e) { Logger.Warning("ARCA: no se pudo actualizar el acceso de inicio: " + e.Message); }
 
                 var commandLineArguments = startupEvent != null ? startupEvent.Args.Select(arg => arg.Replace("-", "/").Trim()).ToArray() : null;
                 var memoryAreas = Enums.Memory.Areas.None;
@@ -404,6 +407,10 @@ namespace WinMemoryCleaner
 
                         if (argument.Equals(Constants.App.CommandLineArgument.Service, StringComparison.OrdinalIgnoreCase))
                             startupType = Enums.StartupType.Service;
+
+                        // Only the Startup shortcut passes it; opening ARCA by hand always shows the window.
+                        if (argument.Equals(Constants.App.CommandLineArgument.Tray, StringComparison.OrdinalIgnoreCase))
+                            startInTray = true;
 
                         if (argument.Equals(Constants.App.CommandLineArgument.Uninstall, StringComparison.OrdinalIgnoreCase))
                             startupType = Enums.StartupType.Uninstallation;
@@ -458,7 +465,7 @@ namespace WinMemoryCleaner
                         var mainWindow = new MainWindow();
                         MainWindow = mainWindow;
 
-                        if (!Settings.StartMinimized)
+                        if (!startInTray)
                         {
                             mainWindow.Show();
                             mainWindow.Activate();
@@ -583,6 +590,7 @@ namespace WinMemoryCleaner
             {
                 var mainViewModel = DependencyInjection.Container.Resolve<MainViewModel>();
                 var viewModel = new FloatingBubbleViewModel(mainViewModel.OptimizeCommand);
+                Localizer.StaticPropertyChanged += (sender, e) => Dispatcher.BeginInvoke((Action)(() => viewModel.RaisePropertyChanged(string.Empty)));
 
                 _floatingBubbleWindow = new FloatingBubbleWindow(viewModel);
                 _floatingBubbleController = new DesktopVisibilityController(Dispatcher);

@@ -134,6 +134,7 @@
     <Compile Include="Core\GlobalSuppressions.cs" />
     <Compile Include="Core\Helper.cs" />
     <Compile Include="Core\Localizer.cs" />
+    <Compile Include="Core\Tr.cs" />
     <Compile Include="Core\Logger.cs" />
     <Compile Include="Core\Migrator.cs" />
     <Compile Include="Core\ObservableObject.cs" />
@@ -193,6 +194,7 @@
     <Compile Include="Test\ModelTests.cs" />
     <Compile Include="Test\ServiceTests.cs" />
     <Compile Include="Test\TestCleanup.cs" />
+    <Compile Include="Test\TranslationTests.cs" />
     <Compile Include="Test\ViewModelTests.cs" />
     <Compile Include="View\Base\View.cs" />
     <Compile Include="View\Control\TrayIconContextMenuControl.cs">
