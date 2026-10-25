@@ -107,7 +107,7 @@ namespace WinMemoryCleaner.Test
             {
                 Assert.IsNotNull(Constants.App.Name);
                 Assert.IsFalse(string.IsNullOrEmpty(Constants.App.Name));
-                Assert.AreEqual("WinMemoryCleaner", Constants.App.Name);
+                Assert.AreEqual("ARCA", Constants.App.Name);
             }
 
             [Test]

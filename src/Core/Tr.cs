@@ -54,6 +54,13 @@ namespace WinMemoryCleaner
         /// <summary>Spanish source text → English.</summary>
         internal static readonly Dictionary<string, string> English = new Dictionary<string, string>
         {
+            { "Actualizar", "Update" },
+            { "Buscando actualizaciones…", "Checking for updates…" },
+            { "ARCA está actualizada.", "ARCA is up to date." },
+            { "Hay una nueva versión. Pulsa Actualizar para instalarla.", "A new version is available. Click Update to install it." },
+            { "No se pudo comprobar la actualización. Se reintentará más tarde.", "Could not check for updates. ARCA will try again later." },
+            { "Descargando actualización…", "Downloading update…" },
+            { "No se pudo actualizar. Pulsa Actualizar para reintentar.", "Could not update. Click Update to try again." },
             { "Tu memoria, bajo control", "Your memory, under control" },
             { "Memoria RAM", "RAM memory" },
             { "1 Clic Clean", "1-Click Clean" },

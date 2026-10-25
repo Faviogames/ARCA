@@ -480,7 +480,7 @@ namespace WinMemoryCleaner
                         // Subscribe to power events
                         SystemEvents.PowerModeChanged += OnPowerModeChanged;
 
-                        // Update to the latest release when "AutoUpdate" is on
+                        // Check only; installation requires clicking the Update button.
                         Updater.Start();
 
                         // Process notifications

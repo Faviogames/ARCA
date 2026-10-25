@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -11,7 +11,7 @@ using System.Windows.Threading;
 namespace WinMemoryCleaner
 {
     /// <summary>
-    /// Updates ARCA from the latest GitHub release of Faviogames/ARCA when <see cref="Settings.AutoUpdate"/> is on.
+    /// Checks the latest GitHub release of Faviogames/ARCA; installs only on user request.
     /// The release must publish ARCA.exe as a standalone asset.
     /// </summary>
     public static class Updater
@@ -19,6 +19,40 @@ namespace WinMemoryCleaner
         private static WebClient _client;
         private static DateTimeOffset _lastCheck = DateTimeOffset.MinValue;
         private static DispatcherTimer _timer;
+        private static Version _availableVersion;
+        private static bool _installing;
+        private static string _status = "Buscando actualizaciones…";
+
+        /// <summary>Changes in availability or download progress, raised on the UI dispatcher.</summary>
+        public static event Action StateChanged;
+        /// <summary>Only a verified newer release enables the Update button.</summary>
+        public static bool CanInstall { get { return _availableVersion != null && _client == null && !_installing; } }
+        /// <summary>Localized explanation of the update state.</summary>
+        public static string Status { get { return Tr.Get(_status); } }
+        private static void Notify() { if (StateChanged != null) StateChanged(); }
+
+        internal static bool IsNewerRelease(string json, Version current)
+        {
+            var newest = ParseReleaseVersion(json);
+            return newest != null && current != null && newest > Normalize(current);
+        }
+
+        /// <summary>Downloads and installs only after an explicit user click.</summary>
+        public static void InstallAvailable()
+        {
+            if (!CanInstall || App.Path == null) return;
+            try
+            {
+                _installing = true;
+                _status = "Descargando actualización…";
+                _client = CreateClient();
+                _client.DownloadFileCompleted += OnFileDownloadCompleted;
+                var temp = Path.Combine(Path.GetTempPath(), "ARCA-" + Guid.NewGuid().ToString("N") + ".update");
+                Notify();
+                _client.DownloadFileAsync(Constants.App.Repository.LatestExeUri, temp, Tuple.Create(temp, _availableVersion));
+            }
+            catch (Exception ex) { Logger.Error(ex); _status = "No se pudo actualizar. Pulsa Actualizar para reintentar."; Reset(); }
+        }
 
         internal static ProcessStartInfo Process;
 
@@ -55,13 +89,13 @@ namespace WinMemoryCleaner
                     throw new Exception("File download failed.", e.Error);
 
                 if (e.Cancelled)
-                    return;
+                    throw new OperationCanceledException();
 
                 var updateInfo = (Tuple<string, Version>)e.UserState;
                 var temp = updateInfo.Item1;
                 var newestVersion = updateInfo.Item2;
 
-                if (!File.Exists(temp) || !Normalize(AssemblyName.GetAssemblyName(temp).Version).Equals(newestVersion))
+                if (!File.Exists(temp) || AssemblyName.GetAssemblyName(temp).Name != "ARCA" || !Normalize(AssemblyName.GetAssemblyName(temp).Version).Equals(newestVersion))
                 {
                     Helper.DeleteFile(temp);
                     throw new Exception("Downloaded file does not match version " + newestVersion + ".");
@@ -70,7 +104,7 @@ namespace WinMemoryCleaner
                 // Wait for this process to exit, replace the exe and reopen it. The version argument shows the "updated" notification.
                 Process = new ProcessStartInfo
                 {
-                    Arguments = string.Format(CultureInfo.InvariantCulture, @"/c taskkill /f /pid {0} & ping -n 3 127.0.0.1 >nul & move /y ""{1}"" ""{2}"" & start """" ""{2}"" /{3}", System.Diagnostics.Process.GetCurrentProcess().Id, temp, App.Path, newestVersion),
+                    Arguments = string.Format(CultureInfo.InvariantCulture, @"/c taskkill /f /pid {0} & ping -n 3 127.0.0.1 >nul & move /y ""{1}"" ""{2}"" && start """" ""{2}"" /{3}", System.Diagnostics.Process.GetCurrentProcess().Id, temp, App.Path, newestVersion),
                     CreateNoWindow = true,
                     FileName = "cmd",
                     UseShellExecute = false,
@@ -84,7 +118,8 @@ namespace WinMemoryCleaner
             catch (Exception ex)
             {
                 Logger.Error(ex);
-
+                _status = _installing ? "No se pudo actualizar. Pulsa Actualizar para reintentar." : "No se pudo comprobar la actualización. Se reintentará más tarde.";
+                if (!_installing) _availableVersion = null;
                 Reset();
             }
         }
@@ -97,27 +132,19 @@ namespace WinMemoryCleaner
                     throw new Exception("Version check failed.", e.Error);
 
                 if (e.Cancelled)
-                    return;
+                    throw new OperationCanceledException();
 
                 var newestVersion = ParseReleaseVersion(e.Result);
-
-                if (newestVersion == null || Normalize(App.Version) >= newestVersion)
-                {
-                    Reset();
-                    return;
-                }
-
-                var temp = Path.Combine(Path.GetTempPath(), Path.GetFileName(App.Path) + ".update");
-
-                Helper.DeleteFile(temp);
-
-                _client.Headers[HttpRequestHeader.UserAgent] = Constants.App.Title;
-                _client.DownloadFileAsync(Constants.App.Repository.LatestExeUri, temp, Tuple.Create(temp, newestVersion));
+                if (newestVersion == null) throw new InvalidDataException("Missing GitHub release version.");
+                _availableVersion = IsNewerRelease(e.Result, App.Version) ? newestVersion : null;
+                _status = _availableVersion == null ? "ARCA está actualizada." : "Hay una nueva versión. Pulsa Actualizar para instalarla.";
+                Reset();
             }
             catch (Exception ex)
             {
                 Logger.Error(ex);
-
+                _status = _installing ? "No se pudo actualizar. Pulsa Actualizar para reintentar." : "No se pudo comprobar la actualización. Se reintentará más tarde.";
+                if (!_installing) _availableVersion = null;
                 Reset();
             }
         }
@@ -133,6 +160,8 @@ namespace WinMemoryCleaner
             {
                 _client = null;
                 Process = null;
+                _installing = false;
+                Notify();
             }
         }
 
@@ -158,15 +187,21 @@ namespace WinMemoryCleaner
         /// <param name="force">Ignore the check interval (used when the user turns the option on).</param>
         public static void Update(bool force = false)
         {
+            var app = System.Windows.Application.Current;
+            if (app == null || app.Dispatcher.HasShutdownStarted) return;
+            if (!app.Dispatcher.CheckAccess()) { app.Dispatcher.BeginInvoke((Action)(() => Update(force))); return; }
             try
             {
-                if (!Settings.AutoUpdate || !Helper.IsAutoUpdateSupported || _client != null || App.Path == null || App.Version == null)
+                if (!Helper.IsAutoUpdateSupported || _client != null || App.Path == null || App.Version == null)
                     return;
 
+                if (_installing) return;
                 if (!force && DateTimeOffset.Now.Subtract(_lastCheck).TotalHours < Constants.App.AutoUpdateInterval)
                     return;
 
                 _lastCheck = DateTimeOffset.Now;
+                _availableVersion = null;
+                _status = "Buscando actualizaciones…";
 
                 _client = CreateClient();
                 _client.DownloadFileCompleted += OnFileDownloadCompleted;
@@ -176,12 +211,14 @@ namespace WinMemoryCleaner
                 ServicePointManager.Expect100Continue = true;
                 ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072 | (SecurityProtocolType)12288; // TLS 1.2 | TLS 1.3
 
+                Notify();
                 _client.DownloadStringAsync(Constants.App.Repository.LatestReleaseApiUri);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex);
-
+                _status = _installing ? "No se pudo actualizar. Pulsa Actualizar para reintentar." : "No se pudo comprobar la actualización. Se reintentará más tarde.";
+                if (!_installing) _availableVersion = null;
                 Reset();
             }
         }

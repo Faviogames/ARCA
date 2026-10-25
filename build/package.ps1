@@ -1,7 +1,7 @@
 param([string]$Configuration = 'Release', [string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-$assembly = Join-Path $root "src/bin/$Configuration/WinMemoryCleaner.exe"
+$assembly = Join-Path $root "src/bin/$Configuration/ARCA.exe"
 if (!(Test-Path -LiteralPath $assembly)) { throw 'Compile and test first.' }
 $gitOptions = @('-c', "safe.directory=$root", '-C', $root)
 & git @gitOptions diff --quiet HEAD

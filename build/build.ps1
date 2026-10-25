@@ -19,6 +19,6 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 if ($Test) {
     $runner = Join-Path $root 'src\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe'
-    & $runner (Join-Path $root "src\bin\$Configuration\WinMemoryCleaner.exe") /nologo "/xml:$root\src\bin\TestResults.xml"
+    & $runner (Join-Path $root "src\bin\$Configuration\ARCA.exe") /nologo "/xml:$root\src\bin\TestResults.xml"
     exit $LASTEXITCODE
 }

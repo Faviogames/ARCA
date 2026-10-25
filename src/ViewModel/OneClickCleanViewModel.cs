@@ -67,7 +67,7 @@ namespace WinMemoryCleaner
                     case CleanCategory.RecycleBin: file = "papelera"; break;
                     default: return null;
                 }
-                return "pack://application:,,,/WinMemoryCleaner;component/Resources/Images/Clean/" + file + ".png";
+                return "pack://application:,,,/ARCA;component/Resources/Images/Clean/" + file + ".png";
             }
         }
 

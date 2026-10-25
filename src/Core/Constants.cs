@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
@@ -19,7 +19,7 @@ namespace WinMemoryCleaner
             public const string KeyFile = "WinMemoryCleaner.snk";
             public const string License = "GPL-3.0";
             public const string LocalizationResourcePath = EmbeddedResourcePath + "Localization.";
-            public const string Name = "WinMemoryCleaner";
+            public const string Name = "ARCA";
             public const string Shortcut = "ARCA.lnk";
             public const string ThemesResourcePath = EmbeddedResourcePath + "Themes.";
             public const string Title = "ARCA";

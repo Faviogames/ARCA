@@ -10,7 +10,7 @@ Basada en [Windows Memory Cleaner](https://github.com/IgorMundstein/WinMemoryCle
 
 Descarga el portable desde [Releases](https://github.com/Faviogames/ARCA/releases/latest), extráelo y abre `ARCA.exe`. Conserva `nunit.framework.dll` junto al ejecutable: el proyecto heredado incluye sus pruebas en el ensamblado. Cierra la versión anterior desde la bandeja antes de abrir una nueva.
 
-Entrega local: `releases/ARCA-v1.0.3-portable.zip` y `releases/ARCA-v1.0.3-source.zip`. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
+Entrega local: `releases/ARCA-v2.0-portable.zip` y `releases/ARCA-v2.0-source.zip`. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
 
 ARCA abre sin pedir administrador. La limpieza completa de RAM, los temporales del sistema, el registro, los dispositivos desconectados y Extrema solicitan autorización de Windows al ejecutarse. Un auxiliar de la misma aplicación realiza la operación y termina; no se instala ningún servicio. Cancelar el aviso cancela esa operación. Las cachés del usuario y la papelera pueden limpiarse sin elevar la app.
 
@@ -35,32 +35,17 @@ Se recuerdan las categorías. La primera ejecución ofrece vista previa; despué
 
 La casilla opcional «Cerrar navegadores» pertenece a la limpieza de RAM y fuerza su cierre cuando se solicita esa limpieza; puede perderse trabajo sin guardar. El mantenimiento de cachés omite los navegadores abiertos.
 
-## Version 1.0.3 / Versión 1.0.3
+## Versión 2.0 / Version 2.0
 
-Spanish and English are available under **Advanced options → Language**. Download the complete portable ZIP and keep `nunit.framework.dll` beside `ARCA.exe`. Starting with Windows opens ARCA in the tray; opening it manually shows the window. Weekly cleaning is not included yet.
+El ejecutable compilado y el portable se llaman **ARCA.exe**. El pie de la interfaz muestra **ARCA v2.0**. El acceso directo de inicio existente se actualiza a la ubicación actual al abrir esta versión.
 
-Interfaz en español e inglés con cambio inmediato; ayuda breve en Extrema; inicio con Windows siempre en bandeja; eliminadas las casillas de inicio minimizado y atajo global. La limpieza semanal continúa pendiente en [docs/TODO.md](docs/TODO.md).
+Se retira la casilla «Actualizar siempre». ARCA consulta GitHub al abrir y cada 24 horas. **Actualizar** se ilumina en rojo y se habilita solo cuando encuentra una versión más reciente. La descarga, instalación y reinicio empiezan únicamente al pulsarlo. Si no hay novedades o no se pudo comprobar, permanece apagado y deshabilitado; la ayuda explica el estado. La preferencia antigua ya no autoriza instalaciones automáticas.
 
-[English interface preview](docs/1-clic-clean-en.png)
+The executable is now named **ARCA.exe**, including its internal assembly identity. The footer displays **ARCA v2.0**. **Update** glows red and becomes clickable only after finding a newer release. Background checks never install updates automatically; click Update to download, install and restart. The disabled button tooltip explains the current state.
 
-## Versión 1.0.2
+Spanish and English are available under **Advanced options → Language**. Windows startup opens ARCA in the tray. Weekly cleaning is still pending in [docs/TODO.md](docs/TODO.md).
 
-Dispositivos desconectados de todas las clases de Windows, cachés de Discord y vaciado de caché DNS en Extrema. La interfaz usa «1 Clic Clean» y «Caché de navegadores y Discord»; la ayuda recuerda cerrar las aplicaciones.
-
-«Actualizar siempre» es opcional y está desactivado por defecto. Comprueba las releases de Faviogames/ARCA al abrir y cada 24 horas, descarga ARCA.exe, comprueba su versión y reinicia la aplicación. Para instalar por primera vez, utiliza el ZIP completo con sus dependencias.
-
-## Versión 1.0.1
-
-Corrige el bloqueo de comunicación del auxiliar que podía impedir empezar una limpieza en 1.0. USB muestra el registro en curso, comprueba después de cada retirada que desapareció de la lista de Windows y guarda nombres y errores en el informe. No se cuentan las retiradas cuya eliminación no se confirma.
-
-## Lanzamiento 1.0
-
-Primera versión de lanzamiento de ARCA. Los números 4.x identificaban prototipos internos. Incluye inicio con Windows por usuario, permisos solicitados al limpiar y ayudas breves por categoría. Conserva el diseño de RAM, la burbuja circular, los iconos de 256 px y el botón «Limpiar PC».
-
-Se retiró completamente el módulo experimental de historial del prototipo 4.3: ya no se distribuye código SQLite de acceso a perfiles.
-
-La 4.3 recibió una detección heurística genérica de Malwarebytes cuya causa no se confirmó. Retirar el módulo no garantiza que otros antivirus dejen de detectar el ejecutable. ARCA todavía no tiene firma Authenticode; no desactives la protección para instalarla.
-
+![RAM dashboard](docs/ram.png)
 ## Compilar y probar
 
 Requisitos: Windows 10/11, .NET SDK 10 y NuGet CLI en PATH, o variable `NUGET` con la ruta a `nuget.exe`. El proyecto usa C# y WPF sobre .NET Framework 4.0; las referencias y analizadores se restauran desde `src/packages.config`.
@@ -70,7 +55,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File build/build.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File build/test.ps1
 ```
 
-Con paquetes ya restaurados, añade `-SkipRestore` al primer comando. El resultado es `src/bin/Release/WinMemoryCleaner.exe`; el nombre interno se conserva por compatibilidad de los recursos WPF. El portable lo entrega como `ARCA.exe`.
+Con paquetes ya restaurados, añade `-SkipRestore` al primer comando. El resultado es `src/bin/Release/ARCA.exe`; el portable conserva ese mismo nombre.
 
 Las pruebas focalizadas usan datos de ensayo y no limpian la RAM del usuario, cierran sus navegadores ni retiran dispositivos reales. La suite heredada completa no está certificada. Consulta [docs/VALIDATION.md](docs/VALIDATION.md).
 

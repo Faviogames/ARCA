@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -56,6 +56,8 @@ namespace WinMemoryCleaner
             OptimizeCommand = new RelayCommand(() => OptimizeAsync(Enums.Memory.Optimization.Reason.Manual), () => CanOptimize);
             RemoveProcessFromExclusionListCommand = new RelayCommand<string>(RemoveProcessFromExclusionList);
             ResetSettingsToDefaultConfigurationCommand = new RelayCommand(ResetSettingsToDefaultConfiguration);
+            InstallUpdateCommand = new RelayCommand(Updater.InstallAvailable, () => Updater.CanInstall && !IsOptimizationRunning);
+            Updater.StateChanged += OnUpdateStateChanged;
 
             // Properties
             FontSize = Settings.FontSize;
@@ -241,11 +243,33 @@ namespace WinMemoryCleaner
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether [automatic update].
+        /// Installs an available release only after the user clicks Update.
         /// </summary>
         /// <value>
         ///   <c>true</c> if [automatic update]; otherwise, <c>false</c>.
         /// </value>
+        public ICommand InstallUpdateCommand { get; private set; }
+        /// <summary>Release badge displayed at the bottom of the board.</summary>
+        public string ReleaseLabel
+        {
+            get
+            {
+                var version = typeof(MainViewModel).Assembly.GetName().Version;
+                return "ARCA v" + version.ToString(version.Build > 0 ? 3 : 2);
+            }
+        }
+        /// <summary>True only when a newer release can be installed.</summary>
+        public bool UpdateAvailable { get { return Updater.CanInstall; } }
+        /// <summary>Status for the disabled or available update button.</summary>
+        public string UpdateStatus { get { return Updater.Status; } }
+        private void OnUpdateStateChanged()
+        {
+            RaisePropertyChanged(() => UpdateAvailable);
+            RaisePropertyChanged(() => UpdateStatus);
+            CommandManager.InvalidateRequerySuggested();
+        }
+
+        /// <summary>Legacy saved preference; v2.0 never installs updates automatically.</summary>
         public bool AutoUpdate
         {
             get { return Settings.AutoUpdate; }
@@ -923,7 +947,6 @@ namespace WinMemoryCleaner
                     new List<ObservableItem<bool>>
                     {
                        new ObservableItem<bool>(Localizer.String.AlwaysOnTop, () => AlwaysOnTop, value => AlwaysOnTop = value),
-                       new ObservableItem<bool>(Localizer.String.AutoUpdate, () => AutoUpdate, value => AutoUpdate = value, Helper.IsAutoUpdateSupported),
                        new ObservableItem<bool>(Localizer.String.CloseAfterOptimization, () => CloseAfterOptimization, value => CloseAfterOptimization = value),
                        new ObservableItem<bool>(Localizer.String.CloseToTheNotificationArea, () => CloseToTheNotificationArea, value => CloseToTheNotificationArea = value),
                        new ObservableItem<bool>(Localizer.String.CreateStartMenuShortcut, () => CreateStartMenuShortcut, value => CreateStartMenuShortcut = value),
@@ -1395,6 +1418,7 @@ namespace WinMemoryCleaner
         {
             if (disposing)
             {
+                Updater.StateChanged -= OnUpdateStateChanged;
                 if (_cancellationTokenSource != null)
                 {
                     try

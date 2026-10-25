@@ -1,5 +1,14 @@
 # Cambios de ARCA
 
+## 2.0 — 25 de octubre de 2026
+
+- Compilación y ensamblado renombrados a ARCA.exe; recursos WPF y scripts adaptados.
+- Identificación ARCA v2.0 en el pie de ambas secciones.
+- Actualización manual: botón rojo solo cuando hay una versión nueva, deshabilitado sin novedades o sin comprobación válida. Se retira la casilla de actualización automática.
+- El inicio existente se reescribe con la ruta del ejecutable actual y /Tray.
+- 159 pruebas focalizadas superadas, incluidos identidad, comparación de versiones y disponibilidad del botón.
+- No se incluyen limpiezas semanales ni se cambia la lógica de mantenimiento.
+
 ## 1.0.3 — 25 de octubre de 2026
 
 - Ayuda de Limpieza extrema más corta; se mantiene el aviso «Deberás cargar shaders de nuevo».

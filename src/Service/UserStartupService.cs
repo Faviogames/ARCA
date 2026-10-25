@@ -21,7 +21,7 @@ namespace WinMemoryCleaner
         /// <summary>Rewrites a shortcut from an earlier version that lacks the tray argument.</summary>
         internal static void Upgrade()
         {
-            if (IsEnabled && ReadArguments(ShortcutPath) != Arguments) SetEnabled(true);
+            if (IsEnabled) SetEnabled(true); // Also repairs the old executable target after moving/upgrading ARCA.
         }
 
         internal static string ReadArguments(string shortcutPath)

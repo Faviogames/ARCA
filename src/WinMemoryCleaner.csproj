@@ -12,7 +12,7 @@
     <ProjectGuid>{D1FE3A0A-FD12-42A0-AD98-16B9D3F4E14E}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>WinMemoryCleaner</RootNamespace>
-    <AssemblyName>WinMemoryCleaner</AssemblyName>
+    <AssemblyName>ARCA</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -44,7 +44,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\WinMemoryCleaner.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\ARCA.xml</DocumentationFile>
     <LangVersion>4</LangVersion>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -64,7 +64,7 @@
     <WarningLevel>4</WarningLevel>
     <LangVersion>4</LangVersion>
     <Prefer32Bit>false</Prefer32Bit>
-    <DocumentationFile>bin\Release\WinMemoryCleaner.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\ARCA.xml</DocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <NoWarn>CS3001, CS3003</NoWarn>
@@ -142,6 +142,7 @@
     <Compile Include="Core\Structs.cs" />
     <Compile Include="Core\ThemeManager.cs" />
     <Compile Include="Core\Updater.cs" />
+    <Compile Include="Test\UpdaterTests.cs" />
     <Compile Include="Interfaces\IComputerService.cs" />
     <Compile Include="Interfaces\IJsonSerializable.cs" />
     <Compile Include="Interfaces\IHotkeyService.cs" />
