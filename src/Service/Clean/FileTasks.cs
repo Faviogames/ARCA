@@ -96,6 +96,14 @@ namespace WinMemoryCleaner
             new[] { "chromium", "Chromium", @"Chromium\User Data" }
         };
 
+        // Cookies, Local Storage and the login session stay; only caches (including favourite GIFs) go.
+        private static readonly string[][] _discord =
+        {
+            new[] { "Discord", "Discord", "discord" },
+            new[] { "DiscordPTB", "Discord PTB", "discordptb" },
+            new[] { "DiscordCanary", "Discord Canary", "discordcanary" }
+        };
+
         public static IList<CleanTarget> Caches(CleanTaskResult result)
         {
             return Caches(result, IsRunning);
@@ -124,6 +132,15 @@ namespace WinMemoryCleaner
                 if (isRunning(opera[0])) { SkipBrowser(result, opera[1]); continue; }
                 targets.Add(new CleanTarget(Path.Combine(cache, "Cache"), TimeSpan.Zero));
                 targets.Add(new CleanTarget(Path.Combine(cache, "Code Cache"), TimeSpan.Zero));
+            }
+            // Discord is Electron: same disposable cache folders, but it keeps running in the tray.
+            foreach (var discord in _discord)
+            {
+                var data = Path.Combine(Roaming, discord[2]);
+                if (!Directory.Exists(data)) continue;
+                if (isRunning(discord[0])) { SkipBrowser(result, discord[1]); continue; }
+                foreach (var cache in new[] { "Cache", "Code Cache", "GPUCache" })
+                    targets.Add(new CleanTarget(Path.Combine(data, cache), TimeSpan.Zero));
             }
             var firefox = Path.Combine(Local, @"Mozilla\Firefox\Profiles");
             if (Directory.Exists(firefox))

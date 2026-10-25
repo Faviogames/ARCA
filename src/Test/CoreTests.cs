@@ -133,6 +133,15 @@ namespace WinMemoryCleaner.Test
             }
 
             [Test]
+            public void Updater_ParseReleaseVersion_ReadsGitHubTag()
+            {
+                Assert.AreEqual(new Version(1, 0, 3, 0), Updater.ParseReleaseVersion("{\"tag_name\": \"v1.0.3\", \"name\": \"ARCA\"}"));
+                Assert.AreEqual(new Version(2, 1, 0, 0), Updater.ParseReleaseVersion("{\"tag_name\":\"2.1\"}"));
+                Assert.IsNull(Updater.ParseReleaseVersion("{\"message\": \"Not Found\"}"));
+                Assert.IsTrue(Updater.Normalize(new Version(1, 0, 2, 0)) >= Updater.ParseReleaseVersion("{\"tag_name\": \"v1.0.2\"}"));
+            }
+
+            [Test]
             public void App_Repository_Uri_IsValid()
             {
                 Assert.IsNotNull(Constants.App.Repository.Uri);

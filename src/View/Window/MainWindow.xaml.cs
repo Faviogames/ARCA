@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -21,7 +21,7 @@ namespace WinMemoryCleaner
         /// <summary>Eight memory chips; the first three also show the largest applications.</summary>
         public ObservableCollection<RamChip> Chips { get; private set; }
 
-        /// <summary>State of the 1 clic clean section.</summary>
+        /// <summary>State of the 1 Clic Clean section.</summary>
         public OneClickCleanViewModel OneClick { get; private set; }
 
         /// <summary>Creates the dashboard.</summary>

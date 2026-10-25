@@ -162,8 +162,8 @@ namespace WinMemoryCleaner.Test
             Assert.AreEqual(expected, ElevatedOperations.IsFinalResult(state));
         }
 
-        [TestCase(0, "No hay registros USB desconectados para limpiar")]
-        [TestCase(1, "Ningún registro USB retirado")]
+        [TestCase(0, "No hay dispositivos desconectados para limpiar")]
+        [TestCase(1, "Ningún registro de dispositivo retirado")]
         public void EmptyUsbResultDistinguishesNothingToCleanFromFailure(int failures, string expected)
         {
             var result = new CleanTaskResult(CleanCategory.Usb) { Failed = failures };

@@ -6,7 +6,7 @@ using System.Threading;
 namespace WinMemoryCleaner
 {
 #pragma warning disable CA1714 // Singular name reads better at every use site; values are combined only for settings.
-    /// <summary>1 clic clean categories; stored as flags in the settings.</summary>
+    /// <summary>1 Clic Clean categories; stored as flags in the settings.</summary>
     [Flags]
     public enum CleanCategory
     {
@@ -14,17 +14,17 @@ namespace WinMemoryCleaner
         None = 0,
         /// <summary>User/system temporary files, reports, old dumps and broken shortcuts.</summary>
         Temp = 1,
-        /// <summary>Browser, thumbnail and internet caches.</summary>
+        /// <summary>Browser, Discord, thumbnail and internet caches.</summary>
         Caches = 2,
         /// <summary>Desktop and Start menu shortcuts whose local target is gone.</summary>
         Shortcuts = 4,
         /// <summary>Narrow registry rules, backed up before any change.</summary>
         Registry = 8,
-        /// <summary>Disconnected USB device records without a minimum age; driver packages are kept.</summary>
+        /// <summary>Disconnected records in all device classes; legacy Usb bit retained for settings.</summary>
         Usb = 16,
         /// <summary>Recycle bin, opt-in.</summary>
         RecycleBin = 32,
-        /// <summary>GPU shader caches, Windows Update leftovers and Delivery Optimization.</summary>
+        /// <summary>GPU shader caches, Windows Update leftovers, Delivery Optimization and the DNS cache.</summary>
         Extreme = 64
     }
 #pragma warning restore CA1714
@@ -128,7 +128,7 @@ namespace WinMemoryCleaner
                 case CleanCategory.Caches: return "Cachés";
                 case CleanCategory.Shortcuts: return "Accesos directos";
                 case CleanCategory.Registry: return "Registro de Windows";
-                case CleanCategory.Usb: return "Dispositivos USB";
+                case CleanCategory.Usb: return "Dispositivos desconectados";
                 case CleanCategory.RecycleBin: return "Papelera";
                 case CleanCategory.Extreme: return "Limpieza extrema";
                 default: return category.ToString();
@@ -153,7 +153,7 @@ namespace WinMemoryCleaner
             if (r.Files > 0) parts.Add(Plural(r.Files, "archivo", "archivos"));
             if (r.Entries > 0) parts.Add(Plural(r.Entries, EntryNoun(r.Category, false), EntryNoun(r.Category, true)));
             if (parts.Count == 0) parts.Add(r.Category == CleanCategory.Usb
-                ? r.Failed > 0 ? "Ningún registro USB retirado" : "No hay registros USB desconectados para limpiar"
+                ? r.Failed > 0 ? "Ningún registro de dispositivo retirado" : "No hay dispositivos desconectados para limpiar"
                 : estimate ? "Nada que limpiar" : "Ya estaba limpio");
             if (r.Skipped > 0) parts.Add(r.Skipped + " omitidos");
             if (r.Failed > 0) parts.Add(r.Failed + " fallos");

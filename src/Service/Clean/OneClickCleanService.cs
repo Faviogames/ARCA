@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace WinMemoryCleaner
 {
-    /// <summary>Runs the selected 1 clic clean categories one after another, one run at a time.</summary>
+    /// <summary>Runs the selected 1 Clic Clean categories one after another, one run at a time.</summary>
     public static class OneClickCleanService
     {
         // Recycle bin first, so shortcuts recycled later in the same run stay restorable.
@@ -87,7 +87,7 @@ namespace WinMemoryCleaner
                         catch (OperationCanceledException) { result.State = CleanTaskState.Cancelled; }
                         catch (Exception e)
                         {
-                            Logger.Error(e, "ARCA 1 clic clean: " + task.Category);
+                            Logger.Error(e, "ARCA 1 Clic Clean: " + task.Category);
                             result.State = CleanTaskState.Failed;
                             result.AddNote(e.Message);
                         }
@@ -116,7 +116,7 @@ namespace WinMemoryCleaner
         {
             if (results == null) throw new ArgumentNullException("results");
             var text = new StringBuilder();
-            text.AppendLine("ARCA · 1 clic clean · " + DateTime.Now.ToString("g", new CultureInfo("es-ES")));
+            text.AppendLine("ARCA · 1 Clic Clean · " + DateTime.Now.ToString("g", new CultureInfo("es-ES")));
             text.AppendLine(CleanText.Summary(results));
             foreach (var r in results)
             {
@@ -155,7 +155,7 @@ namespace WinMemoryCleaner
                 foreach (var old in Directory.GetFiles(ReportFolder, "1clic-*.txt").OrderByDescending(f => f, StringComparer.Ordinal).Skip(30))
                     File.Delete(old);
             }
-            catch (Exception e) { Logger.Warning("ARCA: no se pudo guardar el informe de 1 clic clean: " + e.Message); }
+            catch (Exception e) { Logger.Warning("ARCA: no se pudo guardar el informe de 1 Clic Clean: " + e.Message); }
         }
     }
 }

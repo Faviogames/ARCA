@@ -383,9 +383,6 @@ namespace WinMemoryCleaner
 
                 if (commandLineArguments != null)
                 {
-                    // Update to the latest version
-                    Updater.Update(commandLineArguments);
-
                     // Process command‑line arguments
                     foreach (var argument in commandLineArguments.Select(arg => arg.Replace("/", string.Empty)))
                     {
@@ -475,6 +472,9 @@ namespace WinMemoryCleaner
 
                         // Subscribe to power events
                         SystemEvents.PowerModeChanged += OnPowerModeChanged;
+
+                        // Update to the latest release when "AutoUpdate" is on
+                        Updater.Start();
 
                         // Process notifications
                         foreach (var notification in _notifications)

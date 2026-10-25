@@ -1,4 +1,17 @@
-﻿# Cambios de ARCA
+# Cambios de ARCA
+
+## 1.0.2 — 25 de octubre de 2026
+
+- Textos de interfaz: «1 Clic Clean», «Caché de navegadores y Discord» y ayuda breve para recordar que las aplicaciones deben estar cerradas.
+- Cachés incluye Discord, Discord PTB y Discord Canary (Cache, Code Cache y GPUCache, también los GIF de favoritos). Se omite si Discord está abierto, incluso en la bandeja. Se conservan cookies, sesión e historial.
+- Limpieza extrema vacía la caché DNS (equivalente a `ipconfig /flushdns`). No libera espacio; aparece en el informe.
+
+- Nueva opción «Actualizar siempre» (Memoria RAM → Opciones avanzadas): busca la última release de GitHub al abrir ARCA y cada 24 horas; si hay una versión nueva, descarga `ARCA.exe`, comprueba su versión y reabre la app actualizada. Desactivada por defecto.
+
+- «Dispositivos USB» pasa a llamarse «Dispositivos desconectados».
+- El análisis y la retirada abarcan todas las clases de Windows, incluidos HID, AudioEndpoint, Monitor, SoftwareComponent y SoftwareDevice; sin filtro por enumerador USB ni por antigüedad.
+- Se mantienen la comprobación de desconexión antes de retirar y la confirmación posterior; no se eliminan paquetes del almacén de controladores.
+- 151 pruebas focalizadas correctas y comparación de solo lectura con los dispositivos presentes de Windows.
 
 ## 1.0.1 — 25 de octubre de 2026
 
@@ -43,6 +56,6 @@ Primera versión de lanzamiento. La numeración 4.x correspondía a prototipos i
 
 ## 4.0 y prototipos
 
-- Sección «1 clic clean», interfaz en forma de RAM, top 3 por consumo y burbuja circular exclusiva del escritorio.
+- Sección «1 Clic Clean», interfaz en forma de RAM, top 3 por consumo y burbuja circular exclusiva del escritorio.
 - Base: Windows Memory Cleaner 3.0.8, de Igor Mundstein. Se conserva su atribución; el historial original está disponible en el repositorio de origen.
 

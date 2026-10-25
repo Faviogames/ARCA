@@ -76,13 +76,12 @@ namespace WinMemoryCleaner
 
             public static class Repository
             {
-                private const string GitHub = "https://github.com/IgorMundstein/WinMemoryCleaner";
-                private const string GitHubRaw = "https://raw.githubusercontent.com/IgorMundstein/WinMemoryCleaner/main";
+                private const string GitHub = "https://github.com/Faviogames/ARCA";
 
-                public static readonly Uri AboutUri = new Uri(GitHub + "?tab=readme-ov-file#windows-memory-cleaner");
-                public static readonly Uri AssemblyInfoUri = new Uri(GitHubRaw + "/src/Properties/AssemblyInfo.cs");
-                public static readonly Uri DownloadUri = new Uri(GitHub + "?tab=readme-ov-file#-download");
-                public static readonly Uri LatestExeUri = new Uri(GitHub + "/releases/latest/download/WinMemoryCleaner.exe");
+                public static readonly Uri AboutUri = new Uri(GitHub + "#readme");
+                public static readonly Uri DownloadUri = new Uri(GitHub + "/releases/latest");
+                public static readonly Uri LatestExeUri = new Uri(GitHub + "/releases/latest/download/ARCA.exe");
+                public static readonly Uri LatestReleaseApiUri = new Uri("https://api.github.com/repos/Faviogames/ARCA/releases/latest");
                 public static readonly Uri Uri = new Uri(GitHub);
             }
         }

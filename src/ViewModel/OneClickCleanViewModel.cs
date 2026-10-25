@@ -11,7 +11,7 @@ using System.Windows.Threading;
 
 namespace WinMemoryCleaner
 {
-    /// <summary>One category tile of the 1 clic clean section.</summary>
+    /// <summary>One category tile of the 1 Clic Clean section.</summary>
     public sealed class CleanCard : ObservableObject
     {
         private readonly Action _changed;
@@ -40,7 +40,7 @@ namespace WinMemoryCleaner
                 switch (Category)
                 {
                     case CleanCategory.Temp: return "Elimina temporales antiguos del usuario y Windows, informes de errores y volcados antiguos. Los accesos directos rotos se envían a la papelera.";
-                    case CleanCategory.Caches: return "Limpia cachés y miniaturas. Conserva el historial y los datos de inicio de sesión.";
+                    case CleanCategory.Caches: return "Las aplicaciones deben estar cerradas.";
                     case CleanCategory.Registry: return "Limpia referencias a programas que ya no existen. Guarda un respaldo antes de modificar el registro.";
                     case CleanCategory.Usb: return "Ideal para solucionar problemas con mandos y periféricos.";
                     case CleanCategory.RecycleBin: return null;
@@ -103,7 +103,7 @@ namespace WinMemoryCleaner
         public string Text { get; internal set; }
     }
 
-    /// <summary>State and commands of the 1 clic clean section. Independent from the RAM cleaning and the bubble.</summary>
+    /// <summary>State and commands of the 1 Clic Clean section. Independent from the RAM cleaning and the bubble.</summary>
     public sealed class OneClickCleanViewModel : ObservableObject, IDisposable
     {
         private readonly Dispatcher _dispatcher;
@@ -121,7 +121,7 @@ namespace WinMemoryCleaner
             Cards = new ObservableCollection<CleanCard>
             {
                 new CleanCard(CleanCategory.Temp, "Temporales, informes de errores y accesos directos rotos", "M6,2 H18 L24,8 V30 H6 Z M18,2 V8 H24 M10,15 H20 M10,20 H20 M10,25 H16", (saved & CleanCategory.Temp) != 0, changed),
-                new CleanCard(CleanCategory.Caches, "Caché de navegadores cerrados y miniaturas de Windows", "M4,7 A10,4 0 1 0 24,7 A10,4 0 1 0 4,7 M4,7 V25 A10,4 0 0 0 24,25 V7 M4,13 A10,4 0 0 0 24,13 M4,19 A10,4 0 0 0 24,19", (saved & CleanCategory.Caches) != 0, changed),
+                new CleanCard(CleanCategory.Caches, "Caché de navegadores y Discord", "M4,7 A10,4 0 1 0 24,7 A10,4 0 1 0 4,7 M4,7 V25 A10,4 0 0 0 24,25 V7 M4,13 A10,4 0 0 0 24,13 M4,19 A10,4 0 0 0 24,19", (saved & CleanCategory.Caches) != 0, changed),
                 new CleanCard(CleanCategory.Registry, "Se guarda un respaldo", "M14,3 L24,8 V20 L14,25 L4,20 V8 Z M4,8 L14,13 L24,8 M14,13 V25", (saved & CleanCategory.Registry) != 0, changed),
                 new CleanCard(CleanCategory.Usb, "Limpia dispositivos desconectados obsoletos", "M10,2 H18 V9 H10 Z M8,9 H20 V21 A6,6 0 0 1 8,21 Z M12.5,4.5 V6.5 M15.5,4.5 V6.5", (saved & CleanCategory.Usb) != 0, changed),
                 new CleanCard(CleanCategory.RecycleBin, "Se vacía la papelera", "M4,7 H24 M10,7 V4 H18 V7 M6,7 L8,28 H20 L22,7 M12,12 V23 M16,12 V23", (saved & CleanCategory.RecycleBin) != 0, changed)
@@ -253,7 +253,7 @@ namespace WinMemoryCleaner
         private static void Save()
         {
             try { Settings.Save(); }
-            catch (Exception e) { Logger.Warning("ARCA: no se pudieron guardar las preferencias de 1 clic clean: " + e.Message); }
+            catch (Exception e) { Logger.Warning("ARCA: no se pudieron guardar las preferencias de 1 Clic Clean: " + e.Message); }
         }
 
         private void StartOrCancel()

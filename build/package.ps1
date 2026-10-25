@@ -36,6 +36,9 @@ https://github.com/Faviogames/ARCA
 [IO.File]::WriteAllText((Join-Path $portable 'LEEME.txt'),$readme,(New-Object Text.UTF8Encoding($false)))
 $portableZip = Join-Path $release "$label-portable.zip"
 Compress-Archive -LiteralPath $portable -DestinationPath $portableZip
-$lines = foreach ($file in @($portableZip,$sourceZip)) { '{0}  {1}' -f (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant(),(Split-Path $file -Leaf) }
+# Standalone exe for the in-app updater (releases/latest/download/ARCA.exe)
+$updateExe = Join-Path $release 'ARCA.exe'
+Copy-Item -LiteralPath $assembly -Destination $updateExe
+$lines = foreach ($file in @($portableZip,$sourceZip,$updateExe)) { '{0}  {1}' -f (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant(),(Split-Path $file -Leaf) }
 [IO.File]::WriteAllLines((Join-Path $release 'SHA256SUMS.txt'),$lines,(New-Object Text.UTF8Encoding($false)))
-Get-Item -LiteralPath $portableZip,$sourceZip
+Get-Item -LiteralPath $portableZip,$sourceZip,$updateExe

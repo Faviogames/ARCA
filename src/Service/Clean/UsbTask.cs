@@ -7,7 +7,7 @@ using System.Threading;
 namespace WinMemoryCleaner
 {
     /// <summary>
-    /// Removes disconnected USB device records without a minimum age or a last-seen date.
+    /// Removes confirmed nonpresent device records across all Windows device classes.
     /// Driver packages stay in the driver store. Presence is checked again before each removal.
     /// </summary>
     internal sealed class UsbCleanTask : ICleanTask
@@ -34,16 +34,23 @@ namespace WinMemoryCleaner
         {
             int status, problem;
             // Unknown/error states are retained; only a confirmed absent devnode is eligible.
-            return CM_Get_DevNode_Status(out status, out problem, devInst, 0) != CR_NO_SUCH_DEVINST;
+            return !ShouldRemoveFromStatus(CM_Get_DevNode_Status(out status, out problem, devInst, 0));
+        }
+
+        internal static bool ShouldRemoveFromStatus(int configurationResult)
+        {
+            return configurationResult == CR_NO_SUCH_DEVINST;
         }
 
         public void Run(bool apply, CleanTaskResult result, CancellationToken token)
         {
-            foreach (var enumerator in new[] { "USB", "USBSTOR" })
+            // A null enumerator includes HID, SWD audio/software components, monitors,
+            // USB and other classes. The persisted category bit keeps its legacy name.
+            const string enumerator = null;
             {
-                result.Progress("Revisando registros de dispositivos " + enumerator + "…");
+                result.Progress("Revisando dispositivos desconectados de Windows…");
                 var set = SetupDiGetClassDevsW(IntPtr.Zero, enumerator, IntPtr.Zero, DIGCF_ALLCLASSES);
-                if (set == INVALID_HANDLE_VALUE) { result.Failed++; result.AddNote("No se pudo leer la lista de dispositivos " + enumerator); continue; }
+                if (set == INVALID_HANDLE_VALUE) { result.Failed++; result.AddNote("No se pudo leer la lista de dispositivos de Windows"); return; }
                 try
                 {
                     var devices = new List<SP_DEVINFO_DATA>();
@@ -54,7 +61,7 @@ namespace WinMemoryCleaner
                         if (!SetupDiEnumDeviceInfo(set, i, ref item))
                         {
                             var error = Marshal.GetLastWin32Error();
-                            if (error != 259) { result.Failed++; result.AddNote("No se pudo completar la revisión de " + enumerator + " · error " + error); }
+                            if (error != 259) { result.Failed++; result.AddNote("No se pudo completar la revisión de dispositivos · error " + error); }
                             break;
                         }
                         if (ShouldRemove(IsPresent(item.DevInst))) devices.Add(item);
@@ -69,9 +76,9 @@ namespace WinMemoryCleaner
 
                         var name = Name(set, ref data);
                         var instanceId = InstanceId(set, ref data);
-                        var line = name + "  (USB desconectado · sin espera mínima)";
-                        if (!apply) { result.Entries++; result.Detail(line); continue; }
+                        var line = name + "  (dispositivo desconectado · sin espera mínima)";
                         if (instanceId == null) { result.Skipped++; result.Detail("Omitido: no se pudo identificar " + name); continue; }
+                        if (!apply) { result.Entries++; result.Detail(line); continue; }
                         if (IsRegistered(enumerator, instanceId) == false)
                         { result.Skipped++; result.Detail("Ya no estaba registrado: " + name); continue; }
                         token.ThrowIfCancellationRequested();
@@ -160,7 +167,7 @@ namespace WinMemoryCleaner
             }
             var id = new StringBuilder(512);
             int size;
-            return SetupDiGetDeviceInstanceIdW(set, ref data, id, id.Capacity, out size) ? id.ToString() : "Dispositivo USB";
+            return SetupDiGetDeviceInstanceIdW(set, ref data, id, id.Capacity, out size) ? id.ToString() : "Dispositivo";
         }
 
         private const int DIGCF_ALLCLASSES = 0x4, DIF_REMOVE = 0x5, CR_NO_SUCH_DEVINST = 0xD;

@@ -53,6 +53,11 @@ namespace WinMemoryCleaner
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool AllowSetForegroundWindow(int dwProcessId);
 
+        // Undocumented but stable since Windows 2000; it is what ipconfig /flushdns calls.
+        [DllImport("dnsapi.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool DnsFlushResolverCache();
+
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool AttachConsole(int dwProcessId);

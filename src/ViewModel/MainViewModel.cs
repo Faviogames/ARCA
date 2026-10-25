@@ -260,6 +260,9 @@ namespace WinMemoryCleaner
                     Settings.AutoUpdate = Helper.IsAutoUpdateSupported && value;
                     Settings.Save();
 
+                    if (Settings.AutoUpdate)
+                        Updater.Update(force: true);
+
                     RaisePropertyChanged();
                 }
                 finally

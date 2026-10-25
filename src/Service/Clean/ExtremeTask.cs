@@ -10,7 +10,7 @@ namespace WinMemoryCleaner
 {
     /// <summary>
     /// Opt-in deep clean: GPU shader caches, downloaded Windows Update packages and the
-    /// Delivery Optimization cache. WinSxS and DISM /ResetBase are deliberately never touched.
+    /// Delivery Optimization cache, plus a DNS resolver cache flush. WinSxS and DISM /ResetBase are deliberately never touched.
     /// </summary>
     internal sealed class ExtremeCleanTask : ICleanTask
     {
@@ -40,6 +40,11 @@ namespace WinMemoryCleaner
             catch (Exception e) { delivery.Failed++; delivery.AddNote("Optimización de distribución: " + e.Message); }
             result.Add(delivery);
 
+            token.ThrowIfCancellationRequested();
+            // Frees no disk space; it only shows up as a report line, or a failure.
+            if (!apply) result.Detail("Caché DNS: se vaciará");
+            else if (NativeMethods.DnsFlushResolverCache()) result.Detail("Caché DNS vaciada");
+            else { result.Failed++; result.AddNote("Caché DNS no se pudo vaciar"); }
         }
 
         /// <summary>Why update leftovers must stay right now, or null when it is safe to remove them.</summary>

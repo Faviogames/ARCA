@@ -236,6 +236,16 @@ namespace WinMemoryCleaner.Test
             Assert.IsFalse(UsbCleanTask.ShouldRemove(true));
         }
 
+        [TestCase(0, false)]
+        [TestCase(13, true)]
+        [TestCase(5, false)]
+        [TestCase(26, false)]
+        [TestCase(28, false)]
+        public void OnlyConfirmedAbsentWindowsNodesAreEligible(int status, bool eligible)
+        {
+            Assert.AreEqual(eligible, UsbCleanTask.ShouldRemoveFromStatus(status));
+        }
+
         [Test]
         public void Usb_ReconnectedDeviceIsNotRemovedAfterAnalysis()
         {
@@ -254,6 +264,22 @@ namespace WinMemoryCleaner.Test
             var outcome = UsbCleanTask.RemoveIfDisconnected(() => false, () => { calls++; return removalSucceeds; });
             Assert.AreEqual(removalSucceeds, outcome);
             Assert.AreEqual(1, calls);
+        }
+
+        [Test]
+        public void Caches_DiscordOnlyCacheFoldersAndSkippedWhileOpen()
+        {
+            var discord = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "discord");
+            Assume.That(Directory.Exists(discord), "Discord is not installed on this machine.");
+
+            var closed = CleanCatalog.Caches(new CleanTaskResult(CleanCategory.Caches), p => false)
+                .Select(t => t.Path).Where(p => p.StartsWith(discord + "\\", StringComparison.OrdinalIgnoreCase)).ToList();
+            CollectionAssert.AreEquivalent(new[] { "Cache", "Code Cache", "GPUCache" }.Select(c => Path.Combine(discord, c)), closed);
+
+            var result = new CleanTaskResult(CleanCategory.Caches);
+            var open = CleanCatalog.Caches(result, p => p == "Discord");
+            Assert.IsFalse(open.Any(t => t.Path.StartsWith(discord + "\\", StringComparison.OrdinalIgnoreCase)));
+            StringAssert.Contains("Discord abierto", result.Note);
         }
 
         [Test]

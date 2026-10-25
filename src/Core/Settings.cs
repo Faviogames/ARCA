@@ -49,7 +49,7 @@ namespace WinMemoryCleaner
 
         public static double FloatingBubbleTop { get; set; }
 
-        // ARCA 1 clic clean: selected CleanCategory flags and whether the next run shows a preview first.
+        // ARCA 1 Clic Clean: selected CleanCategory flags and whether the next run shows a preview first.
         public static int OneClickCategories { get; set; }
 
         public static bool OneClickPreview { get; set; }
@@ -181,7 +181,7 @@ namespace WinMemoryCleaner
                         // RamPrototype is manual-only; do not import legacy schedules.
                         AutoOptimizationInterval = 0;
                         AutoOptimizationMemoryUsage = 0;
-                        AutoUpdate = false; // ARCA releases are installed manually.
+                        AutoUpdate = Convert.ToBoolean(key.GetValue(Helper.NameOf(() => AutoUpdate), AutoUpdate), _culture);
                         CloseAfterOptimization = Convert.ToBoolean(key.GetValue(Helper.NameOf(() => CloseAfterOptimization), CloseAfterOptimization), _culture);
                         CloseToTheNotificationArea = Convert.ToBoolean(key.GetValue(Helper.NameOf(() => CloseToTheNotificationArea), CloseToTheNotificationArea), _culture);
                         CompactMode = Convert.ToBoolean(key.GetValue(Helper.NameOf(() => CompactMode), CompactMode), _culture);
