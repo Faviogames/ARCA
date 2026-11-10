@@ -182,6 +182,46 @@ namespace WinMemoryCleaner.Test
             using (var key = Registry.CurrentUser.OpenSubKey(_key + @"\App")) Assert.IsNotNull(key);
         }
 
+
+        [Test]
+        public void FullAnalyzerFindsOwnedAppPathsAndUninstallEntriesWithoutApplyingChanges()
+        {
+            var name = "ARCA-Test-" + Guid.NewGuid().ToString("N");
+            var app = @"Software\Microsoft\Windows\CurrentVersion\App Paths\" + name + ".exe";
+            var uninstall = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\" + name;
+            var created = new List<string>();
+            try
+            {
+                using (var before = Registry.CurrentUser.OpenSubKey(app)) Assert.IsNull(before);
+                using (var before = Registry.CurrentUser.OpenSubKey(uninstall)) Assert.IsNull(before);
+                using (var key = Registry.CurrentUser.CreateSubKey(app))
+                {
+                    created.Add(app);
+                    key.SetValue(null, Path.Combine(_folder, "missing.exe"));
+                }
+                using (var key = Registry.CurrentUser.CreateSubKey(uninstall))
+                {
+                    created.Add(uninstall);
+                    key.SetValue("DisplayName", name);
+                    key.SetValue("InstallLocation", Path.Combine(_folder, "missing-install"));
+                    key.SetValue("UninstallString", "\"" + Path.Combine(_folder, "missing-install", "uninstall.exe") + "\"");
+                }
+                var result = new CleanTaskResult(CleanCategory.Registry);
+                var backup = Path.Combine(_folder, "full-analysis-backup");
+                RegistryRules.Run(false, backup, result, CancellationToken.None);
+                Assert.IsTrue(result.Details.Any(d => d.IndexOf(app, StringComparison.OrdinalIgnoreCase) >= 0), "The full scanner must actually enumerate App Paths.");
+                Assert.IsTrue(result.Details.Any(d => d.IndexOf(uninstall, StringComparison.OrdinalIgnoreCase) >= 0), "The full scanner must actually enumerate Uninstall.");
+                Assert.IsFalse(Directory.Exists(backup));
+                using (var key = Registry.CurrentUser.OpenSubKey(app)) Assert.IsNotNull(key);
+                using (var key = Registry.CurrentUser.OpenSubKey(uninstall)) Assert.IsNotNull(key);
+            }
+            finally
+            {
+                foreach (var path in created)
+                    if (path == app || path == uninstall) Registry.CurrentUser.DeleteSubKeyTree(path, false);
+            }
+        }
+
         [Test]
         public void ActualExportDeletionAndImportRestoreTypedData()
         {

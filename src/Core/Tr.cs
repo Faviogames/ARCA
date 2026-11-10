@@ -56,6 +56,7 @@ namespace WinMemoryCleaner
         {
             { "Limpia rutas inexistentes y desinstalaciones huérfanas. Guarda un respaldo.", "Cleans missing paths and orphaned uninstall entries. Saves a backup." },
             { "Comprobando registro: {0}", "Checking registry: {0}" },
+            { "Se conservaron entradas sin confirmación suficiente.", "Entries without sufficient confirmation were kept." },
             { "Registro conservado tras cambiar su estado: ", "Registry entry kept after its state changed: " },
             { "Desinstalación huérfana", "Orphaned uninstall entry" },
             { "Referencia inexistente", "Missing reference" },

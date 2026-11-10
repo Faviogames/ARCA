@@ -64,8 +64,8 @@ namespace WinMemoryCleaner
                     name => Regex.IsMatch(name, @"^\d+$"),
                     (key, name) => MissingReference(key.GetValue(name) as string),
                     "Referencia inexistente", apply, backup, result, token);
-                Children(user, "HKCU", GameDvr, native, apply, backup, result, token,
-                    key => MissingReference(key.GetValue("MatchedExeFullPath") as string), "GameDVR");
+                Children(user, "HKCU", GameDvr, native, apply, backup, result,
+                    key => MissingReference(key.GetValue("MatchedExeFullPath") as string), "GameDVR", token);
             }
             foreach (var view in Environment.Is64BitOperatingSystem
                 ? new[] { RegistryView.Registry64, RegistryView.Registry32 } : new[] { RegistryView.Registry32 })
@@ -163,26 +163,26 @@ namespace WinMemoryCleaner
         private static void UninstallKeys(RegistryKey hive, string hiveName, RegistryView view, bool apply,
             string backup, CleanTaskResult result, CancellationToken token)
         {
-            Children(hive, hiveName, Uninstall, view, apply, backup, result, token, key =>
+            Children(hive, hiveName, Uninstall, view, apply, backup, result, key =>
                 !ProtectedUninstall(name => key.GetValue(name)) &&
                 StaleUninstall(key.Name.Substring(key.Name.LastIndexOf('\\') + 1),
                     key.GetValue("InstallLocation") as string, key.GetValue("UninstallString") as string,
-                    MissingReference, CanList), "Desinstalación huérfana");
+                    MissingReference, CanList), "Desinstalación huérfana", token);
         }
 
         private static void AppPathKeys(RegistryKey hive, string hiveName, RegistryView view, bool apply,
             string backup, CleanTaskResult result, CancellationToken token)
         {
-            Children(hive, hiveName, AppPaths, view, apply, backup, result, token, key =>
+            Children(hive, hiveName, AppPaths, view, apply, backup, result, key =>
             {
                 var exe = RegistryCleanTask.AppPathExecutable(key.GetValue(null) as string);
                 return exe != null && exe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && MissingReference(exe);
-            }, "App Paths");
+            }, "App Paths", token);
         }
 
         private static void Children(RegistryKey hive, string hiveName, string parentPath, RegistryView view,
-            bool apply, string backup, CleanTaskResult result, CancellationToken token,
-            Func<RegistryKey, bool> candidate, string reason)
+            bool apply, string backup, CleanTaskResult result,
+            Func<RegistryKey, bool> candidate, string reason, CancellationToken token)
         {
             try
             {

@@ -183,8 +183,6 @@ namespace WinMemoryCleaner
     /// </summary>
     internal sealed class RegistryCleanTask : ICleanTask
     {
-        private const string MuiCache = @"Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache";
-        private const string AppPaths = @"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths";
 
         public CleanCategory Category { get { return CleanCategory.Registry; } }
 
@@ -199,6 +197,8 @@ namespace WinMemoryCleaner
             var backup = Path.Combine(BackupRoot, DateTime.Now.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture)
                 + "-" + Guid.NewGuid().ToString("N"));
             RegistryRules.Run(apply, backup, result, token);
+            if (result.Entries == 0 && result.Skipped > 0)
+                result.AddNote(Tr.Get("Se conservaron entradas sin confirmación suficiente."));
         }
 
         /// <summary>Executable referenced by a MUICache value name, or null when it is not a file path.</summary>
