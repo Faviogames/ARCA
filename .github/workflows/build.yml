@@ -28,6 +28,9 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
+          git status --porcelain=v1
+          git diff --stat
+          git diff --no-ext-diff | Select-Object -First 120
           ./build/package.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Packaging failed.' }
           $version = [Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $pwd 'src/bin/Release/ARCA.exe'))
