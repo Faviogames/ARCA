@@ -107,7 +107,7 @@ namespace WinMemoryCleaner
         // Disk-wide flushing is opt-in from 2.1 onwards. A missing marker means a legacy
         // selection, which may merely have inherited the former enabled-by-default bit.
         internal const string ModifiedFileCacheOptInValue = "ModifiedFileCacheOptIn";
-        internal static readonly Enums.Memory.Areas DefaultMemoryAreas =
+        internal const Enums.Memory.Areas DefaultMemoryAreas =
             Enums.Memory.Areas.CombinedPageList | Enums.Memory.Areas.ModifiedPageList |
             Enums.Memory.Areas.RegistryCache | Enums.Memory.Areas.StandbyList |
             Enums.Memory.Areas.SystemFileCache | Enums.Memory.Areas.WorkingSet;

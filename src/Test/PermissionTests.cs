@@ -19,7 +19,6 @@ namespace WinMemoryCleaner.Test
             Assert.AreEqual(Enums.Memory.Areas.None, Settings.DefaultMemoryAreas & Enums.Memory.Areas.ModifiedFileCache);
         }
 
-        [TestCase(null)]
         [TestCase(0)]
         [TestCase("1")]
         [TestCase(2)]
@@ -27,6 +26,13 @@ namespace WinMemoryCleaner.Test
         {
             var other = Enums.Memory.Areas.WorkingSet | Enums.Memory.Areas.StandbyListLowPriority;
             Assert.AreEqual(other, Settings.RestoreMemoryAreas(other | Enums.Memory.Areas.ModifiedFileCache, marker));
+        }
+
+        [Test]
+        public void MissingOptInMarkerClearsTheLegacyDefault()
+        {
+            Assert.AreEqual(Enums.Memory.Areas.WorkingSet,
+                Settings.RestoreMemoryAreas(Enums.Memory.Areas.WorkingSet | Enums.Memory.Areas.ModifiedFileCache, null));
         }
 
         [Test]
