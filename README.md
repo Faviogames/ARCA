@@ -10,7 +10,7 @@ Basada en [Windows Memory Cleaner](https://github.com/IgorMundstein/WinMemoryCle
 
 Descarga el portable desde [Releases](https://github.com/Faviogames/ARCA/releases/latest), extráelo y abre `ARCA.exe`. Conserva `nunit.framework.dll` junto al ejecutable: el proyecto heredado incluye sus pruebas en el ensamblado. Cierra la versión anterior desde la bandeja antes de abrir una nueva.
 
-Entrega local: `releases/ARCA-v2.0-portable.zip` y `releases/ARCA-v2.0-source.zip`. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
+Entrega vigente: `ARCA-v2.1-portable.zip` y `ARCA-v2.1-source.zip` en Releases. La entrega 2.1 se compila y empaqueta con GitHub Actions. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
 
 ARCA abre sin pedir administrador. La limpieza completa de RAM, los temporales del sistema, el registro, los dispositivos desconectados y Extrema solicitan autorización de Windows al ejecutarse. Un auxiliar de la misma aplicación realiza la operación y termina; no se instala ningún servicio. Cancelar el aviso cancela esa operación. Las cachés del usuario y la papelera pueden limpiarse sin elevar la app.
 
@@ -34,6 +34,14 @@ En la misma sección, **Idioma** cambia la interfaz entre español e inglés al 
 Se recuerdan las categorías. La primera ejecución ofrece vista previa; después puede limpiarse con un clic. Hay cancelación e informes locales; un fallo no detiene las demás tareas.
 
 La casilla opcional «Cerrar navegadores» pertenece a la limpieza de RAM y fuerza su cierre cuando se solicita esa limpieza; puede perderse trabajo sin guardar. El mantenimiento de cachés omite los navegadores abiertos.
+
+## Versión 2.1 / Version 2.1
+
+**Caché de archivos modificados** está desactivada por defecto, también al actualizar desde v2.0. Evita ejecutar por defecto el volcado de búferes de todas las unidades fijas. Puedes activarla en **Memoria RAM → Opciones avanzadas → Áreas de limpieza**; a partir de ahí se recuerda tu elección. Las otras áreas conservan su configuración.
+
+**Modified file cache** is off by default for both new profiles and upgrades. It remains available under **RAM memory → Advanced options → Cleaning areas**, and subsequent choices persist. Performance impact still needs real timing comparisons.
+
+Las ampliaciones de registro, la limpieza semanal y el vaciado de Packages siguen pendientes; no forman parte de esta entrega.
 
 ## Versión 2.0 / Version 2.0
 

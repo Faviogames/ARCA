@@ -1,4 +1,20 @@
-# Validación de ARCA 2.0
+# Validación de ARCA 2.1
+
+10 de noviembre de 2026.
+
+La compilación y las pruebas focalizadas se ejecutan en GitHub Actions sobre Windows; el ejecutor local no está disponible en esta sesión. La publicación solo continúa si ambos pasos terminan correctamente.
+
+- «Caché de archivos modificados» excluida del valor predeterminado.
+- Migración sin marcador de aceptación explícita: se retira solo ese bit de las áreas guardadas.
+- Un marcador DWORD igual a 1 conserva la elección explícita, sin añadir un bit que el usuario haya desmarcado.
+- Pruebas de marcador ausente, cero, texto y valor no válido; conservación de otras áreas y de una selección vacía.
+- Se mantienen las pruebas focalizadas anteriores, con la identidad de ensamblado actualizada a 2.1.0.0.
+- El empaquetado produce el portable, las fuentes del mismo commit, el ejecutable del actualizador y SHA256SUMS.txt.
+- No se ejecuta limpieza real de RAM ni mantenimiento del sistema durante la compilación o las pruebas. No se ha medido cuánto tarda la primera limpieza en el equipo del usuario, ni se afirma una ganancia de FPS.
+- No se ha probado un inicio de sesión real ni el reemplazo real del ejecutable mediante el actualizador. La suite heredada completa no está certificada.
+- La ampliación local de reglas de registro, sin terminar, no está incluida en esta release. Packages y limpieza semanal siguen pendientes.
+
+## Validación histórica de 2.0
 
 25 de octubre de 2026.
 

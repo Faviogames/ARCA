@@ -8,6 +8,8 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    outputs:
+      release_tag: ${{ steps.package.outputs.release_tag }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -20,3 +22,67 @@ jobs:
       - name: Focused tests
         shell: powershell
         run: ./build/test.ps1
+      - name: Package release
+        id: package
+        if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Release ARCA ')
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./build/package.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Packaging failed.' }
+          $version = [Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $pwd 'src/bin/Release/ARCA.exe'))
+          $tag = 'v{0}.{1}' -f $version.FileMajorPart,$version.FileMinorPart
+          if ($version.FileBuildPart -gt 0) { $tag += '.' + $version.FileBuildPart }
+          if ($tag -notmatch '^v\d+\.\d+(\.\d+)?$') { throw 'Invalid release tag.' }
+          "release_tag=$tag" >> $env:GITHUB_OUTPUT
+          Copy-Item -LiteralPath build/RELEASE_NOTES.md -Destination releases/RELEASE_NOTES.md
+      - name: Save release package
+        if: steps.package.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ARCA-release
+          path: |
+            releases/*.zip
+            releases/ARCA.exe
+            releases/SHA256SUMS.txt
+            releases/RELEASE_NOTES.md
+          if-no-files-found: error
+          retention-days: 14
+  publish:
+    needs: windows
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'Release ARCA ')
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ARCA-release
+          path: releases
+      - name: Publish verified release files
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.windows.outputs.release_tag }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RELEASE_TAG -notmatch '^v\d+\.\d+(\.\d+)?$' -or $env:SOURCE_SHA -notmatch '^[a-f0-9]{40}$') { throw 'Invalid release identity.' }
+          $expected = @(('ARCA-' + $env:RELEASE_TAG + '-portable.zip'), ('ARCA-' + $env:RELEASE_TAG + '-source.zip'), 'ARCA.exe', 'SHA256SUMS.txt')
+          $assets = foreach ($name in $expected) {
+            $file = Get-Item -LiteralPath (Join-Path $pwd ('releases/' + $name))
+            if ($file.Length -eq 0) { throw 'Empty release asset.' }
+            $file.FullName
+          }
+          gh release create $env:RELEASE_TAG @assets --repo $env:GITHUB_REPOSITORY --target $env:SOURCE_SHA --title ("ARCA " + $env:RELEASE_TAG) --notes-file releases/RELEASE_NOTES.md --draft
+          if ($LASTEXITCODE -ne 0) { throw 'Could not create release draft.' }
+          $all = gh api ("repos/" + $env:GITHUB_REPOSITORY + "/releases?per_page=10") | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Could not inspect release draft.' }
+          $release = $all | Where-Object { $_.tag_name -eq $env:RELEASE_TAG -and $_.draft } | Select-Object -First 1
+          if ($LASTEXITCODE -ne 0 -or $release.assets.Count -ne 4) { throw 'Release draft has incomplete assets.' }
+          foreach ($asset in $release.assets) {
+            $hash = (Get-FileHash -LiteralPath (Join-Path $pwd ('releases/' + $asset.name)) -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($asset.digest -ne ('sha256:' + $hash)) { throw ('Digest mismatch: ' + $asset.name) }
+          }
+          gh release edit $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Could not publish release.' }

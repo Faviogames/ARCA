@@ -14,3 +14,10 @@
 - [ ] Cuando se implemente la limpieza semanal, verificar periodicidad con un reloj simulado, persistencia, cancelación, exclusión de Extrema, UAC y sesiones cerradas.
 
 Decisiones pendientes: categorías de la tarea semanal, recuperación de una semana vencida y comportamiento del aviso de administrador. No modificar el modelo de permisos sin discutirlo.
+
+## Actualización 2.1 — 10 de noviembre de 2026
+
+- [x] Desactivar por defecto Caché de archivos modificados, también al migrar configuraciones antiguas; recordar activaciones voluntarias posteriores.
+- [ ] Medir el tiempo de cada etapa de RAM y separar arranque del auxiliar/UAC de la limpieza. Comparar primeras ejecuciones en condiciones equivalentes y observar variación de RAM, respuesta y frametimes antes de atribuir mejoras.
+- [ ] Terminar e integrar la ampliación de reglas del registro iniciada localmente; probar detección, respaldo, revalidación y restauración. No publicar el archivo parcial como función terminada.
+- [ ] Retomar más adelante el vaciado de %LOCALAPPDATA%\\Packages solicitado por el usuario. Alcance acordado: todo el contenido accesible, no solo cachés ni solo apps desinstaladas; opción explícita con aviso de pérdida de datos. El usuario lo aplazó para contar más detalles. No implementar ni ejecutar todavía.

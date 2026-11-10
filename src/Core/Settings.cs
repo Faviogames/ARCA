@@ -104,6 +104,20 @@ namespace WinMemoryCleaner
 
         internal const string UserSettingsPath = @"Software\ARCA";
 
+        // Disk-wide flushing is opt-in from 2.1 onwards. A missing marker means a legacy
+        // selection, which may merely have inherited the former enabled-by-default bit.
+        internal const string ModifiedFileCacheOptInValue = "ModifiedFileCacheOptIn";
+        internal static readonly Enums.Memory.Areas DefaultMemoryAreas =
+            Enums.Memory.Areas.CombinedPageList | Enums.Memory.Areas.ModifiedPageList |
+            Enums.Memory.Areas.RegistryCache | Enums.Memory.Areas.StandbyList |
+            Enums.Memory.Areas.SystemFileCache | Enums.Memory.Areas.WorkingSet;
+
+        internal static Enums.Memory.Areas RestoreMemoryAreas(Enums.Memory.Areas saved, object explicitModifiedFileCacheOptIn)
+        {
+            return explicitModifiedFileCacheOptIn is int && (int)explicitModifiedFileCacheOptIn == 1
+                ? saved : saved & ~Enums.Memory.Areas.ModifiedFileCache;
+        }
+
         private static RegistryKey OpenUserSettings(bool exclusions)
         {
             var current = Registry.CurrentUser.OpenSubKey(UserSettingsPath);
@@ -135,7 +149,7 @@ namespace WinMemoryCleaner
             OneClickPreview = true;
             FontSize = 14;
             Language = Constants.Windows.Locale.Name.English;
-            MemoryAreas = Enums.Memory.Areas.CombinedPageList | Enums.Memory.Areas.ModifiedFileCache | Enums.Memory.Areas.ModifiedPageList | Enums.Memory.Areas.RegistryCache | Enums.Memory.Areas.StandbyList | Enums.Memory.Areas.SystemFileCache | Enums.Memory.Areas.WorkingSet;
+            MemoryAreas = DefaultMemoryAreas;
             OptimizationKey = Key.M;
             OptimizationModifiers = ModifierKeys.Control | ModifierKeys.Shift;
             ProcessExclusionList = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -201,7 +215,7 @@ namespace WinMemoryCleaner
                             if ((memoryAreas & Enums.Memory.Areas.StandbyList) != 0 && (memoryAreas & Enums.Memory.Areas.StandbyListLowPriority) != 0)
                                 memoryAreas &= ~Enums.Memory.Areas.StandbyListLowPriority;
 
-                            MemoryAreas = memoryAreas;
+                            MemoryAreas = RestoreMemoryAreas(memoryAreas, key.GetValue(ModifiedFileCacheOptInValue));
                         }
 
                         Key optimizationKey;
@@ -314,6 +328,7 @@ namespace WinMemoryCleaner
                         key.SetValue(Helper.NameOf(() => FontSize), FontSize);
                         key.SetValue(Helper.NameOf(() => Language), Language);
                         key.SetValue(Helper.NameOf(() => MemoryAreas), (int)MemoryAreas);
+                        key.SetValue(ModifiedFileCacheOptInValue, (MemoryAreas & Enums.Memory.Areas.ModifiedFileCache) != 0 ? 1 : 0);
                         key.SetValue(Helper.NameOf(() => OptimizationKey), (int)OptimizationKey);
                         key.SetValue(Helper.NameOf(() => OptimizationModifiers), (int)OptimizationModifiers);
                         key.SetValue(Helper.NameOf(() => RunOnPriority), (int)RunOnPriority);

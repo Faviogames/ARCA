@@ -1,5 +1,15 @@
 # Cambios de ARCA
 
+## 2.1 — 10 de noviembre de 2026
+
+- Caché de archivos modificados desactivada por defecto para nuevas instalaciones y migraciones desde versiones anteriores.
+- Marcador por usuario para conservar una activación voluntaria posterior y respetar también la desactivación.
+- Se conservan las demás áreas seleccionadas y la opción existente en la interfaz.
+- Pruebas de valores predeterminados, configuración heredada, marcador ausente/inválido y persistencia de la elección.
+- Compilación, pruebas y empaquetado en GitHub Actions. Publicación de releases después de validación.
+- Las mejoras de registro y la limpieza semanal siguen pendientes. El vaciado de Packages fue aplazado por el usuario.
+
+
 ## 2.0 — 25 de octubre de 2026
 
 - Compilación y ensamblado renombrados a ARCA.exe; recursos WPF y scripts adaptados.

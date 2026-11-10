@@ -56,7 +56,7 @@ namespace WinMemoryCleaner.Test
         {
             var assembly = typeof(Updater).Assembly;
             Assert.AreEqual("ARCA", assembly.GetName().Name);
-            Assert.AreEqual(new Version(2, 0, 0, 0), assembly.GetName().Version);
+            Assert.AreEqual(new Version(2, 1, 0, 0), assembly.GetName().Version);
             Assert.AreEqual("ARCA", ((AssemblyTitleAttribute)Attribute.GetCustomAttribute(assembly, typeof(AssemblyTitleAttribute))).Title);
             Assert.AreEqual("ARCA", ((AssemblyProductAttribute)Attribute.GetCustomAttribute(assembly, typeof(AssemblyProductAttribute))).Product);
         }

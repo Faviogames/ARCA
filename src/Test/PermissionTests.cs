@@ -8,6 +8,38 @@ namespace WinMemoryCleaner.Test
     [TestFixture]
     public class PermissionTests
     {
+
+        [Test]
+        public void DiskWideFileCacheFlushIsOffInNewProfiles()
+        {
+            var expected = Enums.Memory.Areas.CombinedPageList | Enums.Memory.Areas.ModifiedPageList |
+                Enums.Memory.Areas.RegistryCache | Enums.Memory.Areas.StandbyList |
+                Enums.Memory.Areas.SystemFileCache | Enums.Memory.Areas.WorkingSet;
+            Assert.AreEqual(expected, Settings.DefaultMemoryAreas);
+            Assert.AreEqual(Enums.Memory.Areas.None, Settings.DefaultMemoryAreas & Enums.Memory.Areas.ModifiedFileCache);
+        }
+
+        [TestCase(null)]
+        [TestCase(0)]
+        [TestCase("1")]
+        [TestCase(2)]
+        public void LegacyOrInvalidOptInCannotReenableDiskFlushing(object marker)
+        {
+            var other = Enums.Memory.Areas.WorkingSet | Enums.Memory.Areas.StandbyListLowPriority;
+            Assert.AreEqual(other, Settings.RestoreMemoryAreas(other | Enums.Memory.Areas.ModifiedFileCache, marker));
+        }
+
+        [Test]
+        public void ExplicitChoiceSurvivesRestartWithoutChangingOtherAreas()
+        {
+            var selected = Enums.Memory.Areas.ModifiedFileCache | Enums.Memory.Areas.RegistryCache;
+            Assert.AreEqual(selected, Settings.RestoreMemoryAreas(selected, 1));
+            Assert.AreEqual(Enums.Memory.Areas.RegistryCache,
+                Settings.RestoreMemoryAreas(Enums.Memory.Areas.RegistryCache, 1),
+                "A stale marker must not add the bit back after the user unchecked it.");
+            Assert.AreEqual(Enums.Memory.Areas.None, Settings.RestoreMemoryAreas(Enums.Memory.Areas.None, null));
+        }
+
         [TestCase(CleanCategory.Caches, false)]
         [TestCase(CleanCategory.RecycleBin, false)]
         [TestCase(CleanCategory.Temp, true)]
