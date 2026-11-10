@@ -72,7 +72,7 @@ namespace WinMemoryCleaner
             {
                 using (var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
                 {
-                    AppPathKeys(machine, "HKLM", view, apply, backup, result, token);
+                    if (view == native) AppPathKeys(machine, "HKLM", view, apply, backup, result, token);
                     UninstallKeys(machine, "HKLM", view, apply, backup, result, token);
                     Values(machine, "HKLM", view, MachineValues, apply, backup, result, token);
                     if (view == native) Values(machine, "HKLM", view, SharedMachineValues, apply, backup, result, token);
