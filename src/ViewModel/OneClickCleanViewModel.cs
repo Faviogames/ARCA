@@ -42,7 +42,7 @@ namespace WinMemoryCleaner
                 {
                     case CleanCategory.Temp: return Tr.Get("Elimina temporales antiguos del usuario y Windows, informes de errores y volcados antiguos. Los accesos directos rotos se envían a la papelera.");
                     case CleanCategory.Caches: return Tr.Get("Las aplicaciones deben estar cerradas.");
-                    case CleanCategory.Registry: return Tr.Get("Limpia referencias a programas que ya no existen. Guarda un respaldo antes de modificar el registro.");
+                    case CleanCategory.Registry: return Tr.Get("Limpia rutas inexistentes y desinstalaciones huérfanas. Guarda un respaldo.");
                     case CleanCategory.Usb: return Tr.Get("Ideal para solucionar problemas con mandos y periféricos.");
                     case CleanCategory.RecycleBin: return null;
                     default: return Subtitle;

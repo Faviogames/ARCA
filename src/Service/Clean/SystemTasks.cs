@@ -16,7 +16,7 @@ namespace WinMemoryCleaner
     {
         public static bool IsMissing(string path)
         {
-            return IsMissing(path, p => File.Exists(p) || Directory.Exists(p), DriveTypeOf);
+            return IsMissing(path, ExistsOrUnknown, DriveTypeOf);
         }
 
         /// <summary>
@@ -30,6 +30,15 @@ namespace WinMemoryCleaner
             if (path.Length < 4 || path[1] != ':' || path[2] != '\\' || path.IndexOfAny(Path.GetInvalidPathChars()) >= 0) return false;
             if (driveType(path.Substring(0, 3)) != DriveType.Fixed) return false;
             return !exists(path);
+        }
+
+        // File.Exists returns false for access denied too. Only definite absence is eligible.
+        private static bool ExistsOrUnknown(string path)
+        {
+            try { File.GetAttributes(path); return true; }
+            catch (FileNotFoundException) { return false; }
+            catch (DirectoryNotFoundException) { return false; }
+            catch (Exception) { return true; }
         }
 
         private static DriveType DriveTypeOf(string root)
@@ -169,9 +178,8 @@ namespace WinMemoryCleaner
     }
 
     /// <summary>
-    /// Two narrow registry rules: MUICache values and App Paths keys that point to an executable
-    /// which no longer exists on a fixed drive. Each touched key is exported first; without a
-    /// backup nothing is changed. An empty key or value alone is never considered invalid.
+    /// Backs up and restores registry changes from explicit stale-entry rules. Each touched key
+    /// is exported in its original registry view before revalidation and deletion.
     /// </summary>
     internal sealed class RegistryCleanTask : ICleanTask
     {
@@ -188,32 +196,9 @@ namespace WinMemoryCleaner
 
         public void Run(bool apply, CleanTaskResult result, CancellationToken token)
         {
-            var backup = Path.Combine(BackupRoot, DateTime.Now.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture));
-
-            // MUICache: value names look like "C:\Path\app.exe.FriendlyAppName".
-            using (var key = Registry.CurrentUser.OpenSubKey(MuiCache, apply))
-            {
-                if (key != null)
-                {
-                    var stale = key.GetValueNames().Where(v => MissingPath.IsMissing(MuiExecutable(v))).ToList();
-                    if (stale.Count > 0)
-                    {
-                        if (!apply) { result.Entries += stale.Count; foreach (var v in stale) result.Detail("MUICache  " + v); }
-                        else if (Export(@"HKCU\" + MuiCache, backup, "muicache", result))
-                        {
-                            foreach (var value in stale)
-                            {
-                                token.ThrowIfCancellationRequested();
-                                try { key.DeleteValue(value, false); result.Entries++; result.Detail("MUICache  " + value); }
-                                catch (Exception) { result.Failed++; }
-                            }
-                        }
-                    }
-                }
-            }
-
-            AppPathKeys(Registry.CurrentUser, "HKCU", apply, backup, result, token);
-            AppPathKeys(Registry.LocalMachine, "HKLM", apply, backup, result, token);
+            var backup = Path.Combine(BackupRoot, DateTime.Now.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture)
+                + "-" + Guid.NewGuid().ToString("N"));
+            RegistryRules.Run(apply, backup, result, token);
         }
 
         /// <summary>Executable referenced by a MUICache value name, or null when it is not a file path.</summary>
@@ -238,41 +223,16 @@ namespace WinMemoryCleaner
             return exe > 0 ? value.Substring(0, exe + 4) : value;
         }
 
-        private static void AppPathKeys(RegistryKey hive, string hiveName, bool apply, string backup, CleanTaskResult result, CancellationToken token)
-        {
-            using (var key = hive.OpenSubKey(AppPaths, apply))
-            {
-                if (key == null) return;
-                foreach (var name in key.GetSubKeyNames())
-                {
-                    token.ThrowIfCancellationRequested();
-                    string exe;
-                    try
-                    {
-                        using (var sub = key.OpenSubKey(name)) exe = sub == null ? null : AppPathExecutable(sub.GetValue(null) as string);
-                    }
-                    catch (Exception) { result.Skipped++; continue; }
-                    if (!MissingPath.IsMissing(exe)) continue;
-                    var label = hiveName + @"\" + AppPaths + @"\" + name;
-                    if (!apply) { result.Entries++; result.Detail(label); continue; }
-                    if (!Export(label, backup, hiveName + "-apppaths-" + name, result)) continue;
-                    try { key.DeleteSubKeyTree(name); result.Entries++; result.Detail(label); }
-                    catch (Exception) { result.Failed++; }
-                }
-            }
-        }
-
-        private static bool Export(string key, string folder, string name, CleanTaskResult result)
+        internal static bool Export(string key, string folder, string name, CleanTaskResult result, RegistryView view)
         {
             try
             {
                 Directory.CreateDirectory(folder);
                 foreach (var c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '_');
                 var file = Path.Combine(folder, name + ".reg");
-                if (RunReg("export \"" + key + "\" \"" + file + "\" /y") && File.Exists(file)) return true;
+                if (RunReg("export \"" + key + "\" \"" + file + "\" /y", view) && File.Exists(file) && new FileInfo(file).Length > 0) return true;
             }
             catch (Exception) { }
-            result.Failed++;
             result.AddNote(Tr.Format("Sin respaldo, no se modificó {0}", key));
             return false;
         }
@@ -281,21 +241,41 @@ namespace WinMemoryCleaner
         public static int UndoLast()
         {
             if (!Directory.Exists(BackupRoot)) return -1;
-            var last = Directory.GetDirectories(BackupRoot).OrderByDescending(d => d, StringComparer.Ordinal).FirstOrDefault();
+            var last = Directory.GetDirectories(BackupRoot).Where(d => !d.EndsWith("-restaurado", StringComparison.OrdinalIgnoreCase) && Directory.GetFiles(d, "*.reg").Length > 0).OrderByDescending(d => d, StringComparer.Ordinal).FirstOrDefault();
             if (last == null) return -1;
             var restored = 0;
-            foreach (var file in Directory.GetFiles(last, "*.reg"))
-                if (RunReg("import \"" + file + "\"")) restored++;
-            if (restored > 0)
+            var files = Directory.GetFiles(last, "*.reg");
+            foreach (var file in files)
+                if (ImportFile(file)) restored++;
+            if (restored == files.Length)
             {
                 try { Directory.Move(last, last + "-restaurado"); } catch (Exception) { }
             }
             return restored;
         }
 
-        private static bool RunReg(string arguments)
+        internal static RegistryView BackupView(string file)
         {
-            var info = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "reg.exe"), arguments)
+            var name = Path.GetFileName(file);
+            if (name.StartsWith("r32-", StringComparison.OrdinalIgnoreCase)) return RegistryView.Registry32;
+            if (name.StartsWith("r64-", StringComparison.OrdinalIgnoreCase)) return RegistryView.Registry64;
+            return Environment.Is64BitProcess ? RegistryView.Registry64 : RegistryView.Registry32;
+        }
+
+        internal static bool ImportFile(string file)
+        {
+            return RunReg("import \"" + file + "\"", BackupView(file));
+        }
+
+        internal static string RegExecutable(RegistryView view, bool os64, bool process64)
+        {
+            var folder = !os64 ? "System32" : view == RegistryView.Registry32 ? "SysWOW64" : process64 ? "System32" : "Sysnative";
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), folder, "reg.exe");
+        }
+
+        private static bool RunReg(string arguments, RegistryView view)
+        {
+            var info = new ProcessStartInfo(RegExecutable(view, Environment.Is64BitOperatingSystem, Environment.Is64BitProcess), arguments)
             {
                 CreateNoWindow = true, UseShellExecute = false, WindowStyle = ProcessWindowStyle.Hidden
             };

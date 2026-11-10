@@ -54,6 +54,11 @@ namespace WinMemoryCleaner
         /// <summary>Spanish source text → English.</summary>
         internal static readonly Dictionary<string, string> English = new Dictionary<string, string>
         {
+            { "Limpia rutas inexistentes y desinstalaciones huérfanas. Guarda un respaldo.", "Cleans missing paths and orphaned uninstall entries. Saves a backup." },
+            { "Comprobando registro: {0}", "Checking registry: {0}" },
+            { "Registro conservado tras cambiar su estado: ", "Registry entry kept after its state changed: " },
+            { "Desinstalación huérfana", "Orphaned uninstall entry" },
+            { "Referencia inexistente", "Missing reference" },
             { "Actualizar", "Update" },
             { "Buscando actualizaciones…", "Checking for updates…" },
             { "ARCA está actualizada.", "ARCA is up to date." },

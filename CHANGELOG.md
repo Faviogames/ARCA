@@ -1,5 +1,15 @@
 # Cambios de ARCA
 
+## 2.2 — 10 de noviembre de 2026
+
+- Entrega corregida: incluye caché de archivos modificados apagada por defecto y ampliación de la limpieza del registro.
+- Reglas adicionales para desinstalaciones huérfanas, Steam, GameDVR y referencias específicas a archivos inexistentes.
+- Respaldo por operación, snapshot estructural, revalidación y comprobación posterior. Se omiten rutas no verificables, MSI, actualizaciones y componentes protegidos.
+- Vistas de registro de 32/64 bits, exportación/restauración en la arquitectura correspondiente y eliminación de recuentos duplicados en claves compartidas.
+- Pruebas de decisiones, reconexión/reinstalación, fallo de respaldo, cambios concurrentes y exportación/eliminación/restauración real de claves de ensayo.
+- v2.1 retirada de Releases al completar la publicación de v2.2.
+
+
 ## 2.1 — 10 de noviembre de 2026
 
 - Caché de archivos modificados desactivada por defecto para nuevas instalaciones y migraciones desde versiones anteriores.

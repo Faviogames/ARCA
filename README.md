@@ -10,7 +10,7 @@ Basada en [Windows Memory Cleaner](https://github.com/IgorMundstein/WinMemoryCle
 
 Descarga el portable desde [Releases](https://github.com/Faviogames/ARCA/releases/latest), extráelo y abre `ARCA.exe`. Conserva `nunit.framework.dll` junto al ejecutable: el proyecto heredado incluye sus pruebas en el ensamblado. Cierra la versión anterior desde la bandeja antes de abrir una nueva.
 
-Entrega vigente: `ARCA-v2.1-portable.zip` y `ARCA-v2.1-source.zip` en Releases. La entrega 2.1 se compila y empaqueta con GitHub Actions. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
+Entrega vigente: `ARCA-v2.2-portable.zip` y `ARCA-v2.2-source.zip` en Releases. La entrega 2.2 se compila y empaqueta con GitHub Actions. Los paquetes se distribuyen como archivos de release, no como binarios dentro del código Git.
 
 ARCA abre sin pedir administrador. La limpieza completa de RAM, los temporales del sistema, el registro, los dispositivos desconectados y Extrema solicitan autorización de Windows al ejecutarse. Un auxiliar de la misma aplicación realiza la operación y termina; no se instala ningún servicio. Cancelar el aviso cancela esa operación. Las cachés del usuario y la papelera pueden limpiarse sin elevar la app.
 
@@ -35,13 +35,19 @@ Se recuerdan las categorías. La primera ejecución ofrece vista previa; despué
 
 La casilla opcional «Cerrar navegadores» pertenece a la limpieza de RAM y fuerza su cierre cuando se solicita esa limpieza; puede perderse trabajo sin guardar. El mantenimiento de cachés omite los navegadores abiertos.
 
-## Versión 2.1 / Version 2.1
+## Versión 2.2 / Version 2.2
+
+Incluye **caché de archivos modificados apagada por defecto y la ampliación del registro**. Añade reglas para desinstalaciones huérfanas, Steam, GameDVR y referencias específicas a archivos inexistentes, con respaldo obligatorio, revalidación y verificación de cada retirada. Exportación y restauración respetan las vistas de 32/64 bits. [Reglas y límites](docs/REGISTRY_RULES.md).
+
+Includes both the opt-in modified-file-cache setting and expanded registry rules with mandatory backups and revalidation.
+
+## Versión 2.1 / Version 2.1 (retirada)
 
 **Caché de archivos modificados** está desactivada por defecto, también al actualizar desde v2.0. Evita ejecutar por defecto el volcado de búferes de todas las unidades fijas. Puedes activarla en **Memoria RAM → Opciones avanzadas → Áreas de limpieza**; a partir de ahí se recuerda tu elección. Las otras áreas conservan su configuración.
 
 **Modified file cache** is off by default for both new profiles and upgrades. It remains available under **RAM memory → Advanced options → Cleaning areas**, and subsequent choices persist. Performance impact still needs real timing comparisons.
 
-Las ampliaciones de registro, la limpieza semanal y el vaciado de Packages siguen pendientes; no forman parte de esta entrega.
+La v2.1 no incluía la ampliación del registro y fue sustituida por v2.2. Limpieza semanal y Packages siguen pendientes.
 
 ## Versión 2.0 / Version 2.0
 

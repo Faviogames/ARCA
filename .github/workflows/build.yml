@@ -91,3 +91,13 @@ jobs:
           }
           gh release edit $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --draft=false --latest
           if ($LASTEXITCODE -ne 0) { throw 'Could not publish release.' }
+
+          # v2.1 was incomplete: retire it only after the corrected release is published.
+          if ($env:RELEASE_TAG -eq 'v2.2') {
+            $allReleases = gh api ("repos/" + $env:GITHUB_REPOSITORY + "/releases?per_page=20") | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0) { throw 'Could not inspect superseded releases.' }
+            if ($allReleases | Where-Object { $_.tag_name -eq 'v2.1' }) {
+              gh release delete v2.1 --repo $env:GITHUB_REPOSITORY --yes --cleanup-tag
+              if ($LASTEXITCODE -ne 0) { throw 'Could not retire the incomplete v2.1 release.' }
+            }
+          }

@@ -1,4 +1,22 @@
-# Validación de ARCA 2.1
+# Validación de ARCA 2.2
+
+10 de noviembre de 2026.
+
+La build y las pruebas se ejecutan en Windows mediante GitHub Actions. La publicación está condicionada a su éxito y a los hashes de los archivos adjuntos.
+
+- Se mantiene el valor predeterminado y la migración de caché de archivos modificados de v2.1, con activación posterior explícita.
+- Pruebas nuevas de rutas entrecomilladas, iconos, argumentos, URIs, rutas relativas y variables desconocidas.
+- Desinstalaciones: carpeta y desinstalador ausentes; exclusiones de MSI, componentes protegidos, actualizaciones y entradas sin identidad.
+- Steam: se conserva si existe carpeta o manifiesto, si la biblioteca no es accesible o si la ubicación/identificador no se reconoce.
+- Pruebas de respaldo fallido, cambios después del respaldo, reinstalación antes de retirar y verificación posterior.
+- Pruebas reales de exportación, eliminación e importación de claves HKCU creadas exclusivamente por la suite, con tipos, valores y subclaves. No se ejecuta el escáner en modo aplicar sobre claves reales del usuario.
+- Selección explícita de reg.exe nativo, SysWOW64 o Sysnative según la vista y el proceso. Conservación de la vista original al importar el respaldo.
+- Sin modificaciones durante el análisis; cancelación antes de aplicar sin exportaciones ni cambios.
+- No se ha medido aún el tiempo de la primera limpieza de RAM en el equipo del usuario. No se atribuye una ganancia concreta de FPS o RAM a este cambio.
+- La retirada de dispositivos, elevación e inicio de sesión reales y el reemplazo del ejecutable siguen siendo comprobaciones manuales.
+- El ejecutor local de este chat no está disponible; no se ha sincronizado ni sobrescrito la copia local del proyecto.
+
+## Validación histórica de ARCA 2.1
 
 10 de noviembre de 2026.
 

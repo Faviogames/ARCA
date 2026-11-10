@@ -19,5 +19,5 @@ Decisiones pendientes: categorías de la tarea semanal, recuperación de una sem
 
 - [x] Desactivar por defecto Caché de archivos modificados, también al migrar configuraciones antiguas; recordar activaciones voluntarias posteriores.
 - [ ] Medir el tiempo de cada etapa de RAM y separar arranque del auxiliar/UAC de la limpieza. Comparar primeras ejecuciones en condiciones equivalentes y observar variación de RAM, respuesta y frametimes antes de atribuir mejoras.
-- [ ] Terminar e integrar la ampliación de reglas del registro iniciada localmente; probar detección, respaldo, revalidación y restauración. No publicar el archivo parcial como función terminada.
+- [x] Integrar en v2.2 la ampliación del registro: desinstalaciones huérfanas, Steam, GameDVR y referencias concretas; probar respaldo, revalidación y restauración. Ver docs/REGISTRY_RULES.md.
 - [ ] Retomar más adelante el vaciado de %LOCALAPPDATA%\\Packages solicitado por el usuario. Alcance acordado: todo el contenido accesible, no solo cachés ni solo apps desinstaladas; opción explícita con aviso de pérdida de datos. El usuario lo aplazó para contar más detalles. No implementar ni ejecutar todavía.

@@ -178,6 +178,8 @@
     <Compile Include="Service\Clean\FileTasks.cs" />
     <Compile Include="Service\Clean\OneClickCleanService.cs" />
     <Compile Include="Service\Clean\SystemTasks.cs" />
+    <Compile Include="Service\Clean\RegistryRules.cs" />
+    <Compile Include="Test\RegistryRulesTests.cs" />
     <Compile Include="Service\Clean\UsbTask.cs" />
     <Compile Include="Service\TopMemoryApps.cs" />
     <Compile Include="View\Control\RamBoardSurface.cs" />
