@@ -7,7 +7,7 @@ $nuget = if ($env:NUGET) { $env:NUGET } else { 'nuget' }
 
 # Restore packages.config directly: nuget.exe would otherwise need a Visual Studio MSBuild.
 if (!$SkipRestore) {
-    & $nuget restore (Join-Path $root 'src\packages.config') -PackagesDirectory (Join-Path $root 'src\packages') -NonInteractive | Out-Null
+    & $nuget restore (Join-Path $root 'src\packages.config') -PackagesDirectory (Join-Path $root 'src\packages') -NonInteractive -LockedMode | Out-Null
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 

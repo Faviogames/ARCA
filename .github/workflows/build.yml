@@ -16,6 +16,8 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - uses: NuGet/setup-nuget@v2
+        with:
+          nuget-version: '8.0.0'
       - name: Restore and build
         shell: powershell
         run: ./build/build.ps1
