@@ -264,6 +264,46 @@ namespace WinMemoryCleaner.Test
             using (var key = Registry.CurrentUser.OpenSubKey(_key + @"\App")) Assert.IsNotNull(key);
         }
 
+
+        [Test]
+        public void ValueBatchExportsOnceAndRestoresEveryRemovedValue()
+        {
+            using (var key = Registry.CurrentUser.OpenSubKey(_key + @"\App", true))
+            {
+                key.SetValue("Stale1", Path.Combine(_folder, "first-missing.exe"));
+                key.SetValue("Stale2", Path.Combine(_folder, "second-missing.exe"));
+            }
+            var result = new CleanTaskResult(CleanCategory.Registry);
+            var backup = Path.Combine(_folder, "batch-backup");
+            RegistryRules.ValuesMatching(Registry.CurrentUser, "HKCU", _key + @"\App", NativeView,
+                n => n.StartsWith("Stale", StringComparison.Ordinal),
+                (k, n) => MissingPath.IsMissing(k.GetValue(n) as string), "App Paths",
+                true, backup, result, CancellationToken.None);
+            Assert.AreEqual(2, result.Entries);
+            Assert.AreEqual(0, result.Failed);
+            var file = Directory.GetFiles(backup, "*.reg").Single();
+            Assert.IsTrue(RegistryCleanTask.ImportFile(file));
+            using (var key = Registry.CurrentUser.OpenSubKey(_key + @"\App"))
+            {
+                Assert.AreEqual(Path.Combine(_folder, "first-missing.exe"), key.GetValue("Stale1"));
+                Assert.AreEqual(Path.Combine(_folder, "second-missing.exe"), key.GetValue("Stale2"));
+                Assert.AreEqual(42, key.GetValue("Number"));
+            }
+        }
+
+        [Test]
+        public void ValueSnapshotTracksOnlyTheValueBeingChanged()
+        {
+            using (var key = Registry.CurrentUser.OpenSubKey(_key + @"\App", true))
+            {
+                var original = RegistryRules.Snapshot(key, "Expand");
+                key.SetValue("Number", 99);
+                Assert.AreEqual(original, RegistryRules.Snapshot(key, "Expand"));
+                key.SetValue("Expand", "changed", RegistryValueKind.String);
+                Assert.AreNotEqual(original, RegistryRules.Snapshot(key, "Expand"));
+            }
+        }
+
         [Test]
         public void SnapshotDetectsNestedChangesAndDataTypes()
         {

@@ -17,8 +17,10 @@ Se conservan las entradas MSI, componentes del sistema, actualizaciones, hijos d
 
 Las claves de proveedor completas como HKCU/Software/Khronos, Opera Software o ArcBrowser no se borran solo por su nombre. No se cambian referencias de Windows/Active Setup, datos de anticheat, telemetría ni cachés de instaladores cuya función no se ha verificado.
 
-Antes de aplicar, se exporta la clave en su vista original. Después se comparan sus valores tipados y subclaves, se comprueba de nuevo la evidencia y se verifica la retirada. Sin respaldo o con estado desconocido, se conserva. Un cambio que Windows no confirma como eliminado no se cuenta como retirado.
+Antes de aplicar, se exporta la clave en su vista original. Después se compara el valor tipado que se va a retirar, o la clave completa con sus subclaves cuando se va a eliminar entera, se comprueba de nuevo la evidencia y se verifica la retirada. Sin respaldo o con estado desconocido, se conserva. Un cambio que Windows no confirma como eliminado no se cuenta como retirado.
 
 Los respaldos usan nombres únicos y registran 32/64 bits en el nombre del archivo. Deshacer importa en esa misma vista. Una restauración incompleta conserva la carpeta para poder reintentarla.
 
 Las pruebas de integración usan claves HKCU y carpetas temporales con GUID creadas por la suite; no borran configuraciones reales de aplicaciones.
+
+Las eliminaciones de varios valores de una misma clave comparten un único respaldo completo previo. Solo se retiran valores presentes en el lote inicial y cuya firma tipada siga coincidiendo; los nuevos o cambiados se conservan.

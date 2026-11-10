@@ -211,7 +211,7 @@ namespace WinMemoryCleaner
                     "Referencia inexistente", apply, backup, result, token);
         }
 
-        private static void ValuesMatching(RegistryKey hive, string hiveName, string path, RegistryView view,
+        internal static void ValuesMatching(RegistryKey hive, string hiveName, string path, RegistryView view,
             Func<string, bool> match, Func<RegistryKey, string, bool> candidate, string reason,
             bool apply, string backup, CleanTaskResult result, CancellationToken token)
         {
@@ -220,22 +220,49 @@ namespace WinMemoryCleaner
                 using (var key = hive.OpenSubKey(path))
                 {
                     if (key == null) return;
-                    foreach (var value in key.GetValueNames().Where(match))
+                    var initial = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var name in key.GetValueNames().Where(match))
                     {
                         token.ThrowIfCancellationRequested();
-                        var capturedName = value;
-                        Process(hive, hiveName, path, capturedName, view, k => candidate(k, capturedName),
-                            reason, apply, backup, result, token);
+                        if (!candidate(key, name)) continue;
+                        var snapshot = Snapshot(key, name);
+                        if (snapshot != null) initial.Add(name, snapshot);
+                        else result.Skipped++;
+                    }
+                    bool exported = false, failed = false;
+                    Func<bool> export = () =>
+                    {
+                        if (exported || failed) return exported;
+                        exported = RegistryCleanTask.Export(hiveName + "\\" + path, backup,
+                            (view == RegistryView.Registry32 ? "r32-" : "r64-") + Guid.NewGuid().ToString("N"), result, view);
+                        failed = !exported;
+                        return exported;
+                    };
+                    // The key is exported once, before the first deletion. Only values in the
+                    // pre-export snapshot can be removed; changed/new values are preserved.
+                    foreach (var item in initial)
+                    {
+                        token.ThrowIfCancellationRequested();
+                        var capturedName = item.Key;
+                        ProcessCore(hive, hiveName, path, capturedName, view, k => candidate(k, capturedName),
+                            reason, apply, backup, result, item.Value, export, token);
                     }
                 }
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception e) { result.Skipped++; result.Detail(hiveName + "\\" + path + ": " + e.Message); }
+            catch (Exception ex) { result.Skipped++; result.Detail(hiveName + "\\" + path + ": " + ex.Message); }
         }
 
         internal static void Process(RegistryKey hive, string hiveName, string path, string valueName,
             RegistryView view, Func<RegistryKey, bool> candidate, string reason, bool apply, string backup,
             CleanTaskResult result, CancellationToken token)
+        {
+            ProcessCore(hive, hiveName, path, valueName, view, candidate, reason, apply, backup, result, null, null, token);
+        }
+
+        private static void ProcessCore(RegistryKey hive, string hiveName, string path, string valueName,
+            RegistryView view, Func<RegistryKey, bool> candidate, string reason, bool apply, string backup,
+            CleanTaskResult result, string original, Func<bool> export, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
             var label = hiveName + "\\" + path + (valueName == null ? string.Empty : " → " + valueName)
@@ -247,16 +274,16 @@ namespace WinMemoryCleaner
                 using (var key = hive.OpenSubKey(path))
                 {
                     if (key == null || !candidate(key)) return;
-                    expected = Snapshot(key);
+                    expected = original ?? Snapshot(key, valueName);
                 }
                 if (expected == null) { result.Skipped++; return; }
                 result.Progress(Tr.Format("Comprobando registro: {0}", label));
                 if (!apply) { result.Entries++; result.Detail(label); return; }
                 var outcome = ApplyWithBackup(expected,
-                    () => { token.ThrowIfCancellationRequested(); using (var k = hive.OpenSubKey(path)) return k == null ? null : Snapshot(k); },
+                    () => { token.ThrowIfCancellationRequested(); using (var k = hive.OpenSubKey(path)) return k == null ? null : Snapshot(k, valueName); },
                     () => { using (var k = hive.OpenSubKey(path)) return k != null && candidate(k); },
-                    () => RegistryCleanTask.Export(hiveName + "\\" + path, backup,
-                        (view == RegistryView.Registry32 ? "r32-" : "r64-") + Guid.NewGuid().ToString("N"), result, view),
+                    export ?? (() => RegistryCleanTask.Export(hiveName + "\\" + path, backup,
+                        (view == RegistryView.Registry32 ? "r32-" : "r64-") + Guid.NewGuid().ToString("N"), result, view)),
                     () => Remove(hive, path, valueName, expected, candidate));
                 if (outcome == RegistryMutation.Removed) { result.Entries++; result.Detail(label); }
                 else if (outcome == RegistryMutation.Skipped) { result.Skipped++; result.Detail(Tr.Get("Registro conservado tras cambiar su estado: ") + label); }
@@ -279,7 +306,7 @@ namespace WinMemoryCleaner
         {
             using (var key = hive.OpenSubKey(path, true))
             {
-                if (key == null || Snapshot(key) != expected || !candidate(key)) return false;
+                if (key == null || Snapshot(key, valueName) != expected || !candidate(key)) return false;
                 if (valueName != null)
                 {
                     key.DeleteValue(valueName, false);
@@ -298,30 +325,35 @@ namespace WinMemoryCleaner
 
         // Structural snapshot, including subkeys and typed values, catches changes since export.
         // Oversized/unreadable entries are left untouched.
-        internal static string Snapshot(RegistryKey key)
+        internal static string Snapshot(RegistryKey key, string valueName = null)
         {
             var text = new StringBuilder();
+            if (valueName != null)
+                return key.GetValueNames().Contains(valueName, StringComparer.OrdinalIgnoreCase) && AppendValue(key, valueName, text) ? text.ToString() : null;
             var budget = 1024;
             return AppendSnapshot(key, text, 0, ref budget) ? text.ToString() : null;
+        }
+
+        private static bool AppendValue(RegistryKey key, string name, StringBuilder text)
+        {
+            var kind = key.GetValueKind(name);
+            var data = key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+            if (data is byte[] && ((byte[])data).Length > 1024 * 1024) return false;
+            if (data is string && ((string)data).Length > 1024 * 1024) return false;
+            string encoded;
+            if (data is byte[]) encoded = Convert.ToBase64String((byte[])data);
+            else if (data is string[]) encoded = string.Join(string.Empty, ((string[])data).Select(s => s.Length + ":" + s).ToArray());
+            else encoded = Convert.ToString(data, CultureInfo.InvariantCulture) ?? string.Empty;
+            text.Append(name.Length).Append(':').Append(name).Append(':').Append((int)kind)
+                .Append(':').Append(encoded.Length).Append(':').Append(encoded).Append(';');
+            return text.Length < 1024 * 1024;
         }
 
         private static bool AppendSnapshot(RegistryKey key, StringBuilder text, int depth, ref int budget)
         {
             if (depth > 8 || --budget < 0) return false;
             foreach (var name in key.GetValueNames().OrderBy(n => n, StringComparer.Ordinal))
-            {
-                if (--budget < 0) return false;
-                var kind = key.GetValueKind(name);
-                var data = key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
-                if (data is byte[] && ((byte[])data).Length > 1024 * 1024) return false;
-                if (data is string && ((string)data).Length > 1024 * 1024) return false;
-                string encoded;
-                if (data is byte[]) encoded = Convert.ToBase64String((byte[])data);
-                else if (data is string[]) encoded = string.Join(string.Empty, ((string[])data).Select(s => s.Length + ":" + s).ToArray());
-                else encoded = Convert.ToString(data, CultureInfo.InvariantCulture) ?? string.Empty;
-                text.Append(name.Length).Append(':').Append(name).Append(':').Append((int)kind)
-                    .Append(':').Append(encoded.Length).Append(':').Append(encoded).Append(';');
-            }
+                if (--budget < 0 || !AppendValue(key, name, text)) return false;
             foreach (var name in key.GetSubKeyNames().OrderBy(n => n, StringComparer.Ordinal))
             {
                 text.Append('{').Append(name.Length).Append(':').Append(name);
